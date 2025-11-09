@@ -1,6 +1,8 @@
 package database
 
 import (
+	"mini-pay-backend/internal/models"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -15,7 +17,7 @@ type GormDB struct {
 // NewGormDB
 // Creates and initializes a new SQLite database using GORM,
 // returns a GormDB instance implementing the DB interface.
-// 
+//
 // GORM kullanarak yeni bir SQLite veritabanı oluşturur,
 // DB arayüzünü uygulayan bir GormDB örneği döndürür.
 func NewGormDB() (*GormDB, error) {
@@ -27,7 +29,11 @@ func NewGormDB() (*GormDB, error) {
 		// If an error occurs, return it to the caller.
 		// Bir hata olursa, çağırana hatayı döndürür.
 		return nil, err
+
 	}
+	// Run database migrations
+	// Veritabanı migrasyonlarını çalıştırır
+	database.AutoMigrate(&models.User{})
 
 	// Return a new GormDB containing the opened database connection.
 	// Açılan veritabanı bağlantısını içeren yeni bir GormDB döndürür.

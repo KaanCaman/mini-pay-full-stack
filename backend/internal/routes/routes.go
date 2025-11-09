@@ -2,21 +2,46 @@ package routes
 
 import (
 	"mini-pay-backend/internal/database"
+	"mini-pay-backend/internal/handlers"
 	"mini-pay-backend/internal/logger"
+	"mini-pay-backend/internal/middleware"
+	"mini-pay-backend/internal/repositories"
+	"mini-pay-backend/internal/services"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func RegisterRoutes(app *fiber.App, db database.DB, log logger.Logger) {
 
-	// Health check endpoint
-	app.Get("/", func(c *fiber.Ctx) error {
+	// Build repository
+	// Repository oluştur
+	userRepo := repositories.NewUserRepository(db)
 
-		log.Info("Root endpoint called")
+	// Build service
+	// Service oluştur
+	authService := services.NewAuthService(userRepo, log)
+
+	// Register routes
+	// Route’ları bağla
+	app.Post("/register", handlers.Register(authService))
+	app.Post("/login", handlers.Login(authService))
+	app.Get("/me", middleware.AuthMiddleware(), func(c *fiber.Ctx) error {
+
+		// Access logged user id
+		// Giriş yapan kullanıcının ID’sine eriş
+		userID := c.Locals("user_id")
 
 		return c.JSON(fiber.Map{
+			"message": "Authenticated ✅",
+			"user_id": userID,
+		})
+	})
+
+	// Test endpoint
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"message": "Mini Pay API is running 🚀",
 			"status":  "ok",
-			"message": "Mini Pay API is running...",
 		})
 	})
 }
