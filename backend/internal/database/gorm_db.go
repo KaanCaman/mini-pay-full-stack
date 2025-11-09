@@ -34,6 +34,7 @@ func NewGormDB() (*GormDB, error) {
 	// Run database migrations
 	// Veritabanı migrasyonlarını çalıştırır
 	database.AutoMigrate(&models.User{})
+	database.AutoMigrate(&models.Wallet{})
 
 	// Return a new GormDB containing the opened database connection.
 	// Açılan veritabanı bağlantısını içeren yeni bir GormDB döndürür.
