@@ -10,48 +10,61 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// AuthService encapsulates authentication business logic
-// AuthService kimlik doğrulama işlem mantığını kapsüller
 type AuthService struct {
-	repo *repositories.UserRepository
-	log  logger.Logger
+	userRepo   *repositories.UserRepository
+	walletRepo *repositories.WalletRepository
+	log        logger.Logger
 }
 
-// NewAuthService creates a new service instance with dependencies injected
-// NewAuthService bağımlılıkları enjekte edilerek yeni bir servis örneği oluşturur
-func NewAuthService(repo *repositories.UserRepository, log logger.Logger) *AuthService {
-	return &AuthService{repo: repo, log: log}
+// Updated constructor to inject walletRepo too
+// Constructor güncellendi → walletRepo enjekte ediliyor
+func NewAuthService(
+	userRepo *repositories.UserRepository,
+	walletRepo *repositories.WalletRepository,
+	log logger.Logger,
+) *AuthService {
+	return &AuthService{userRepo: userRepo, walletRepo: walletRepo, log: log}
 }
 
-// Register handles user creation and password hashing
-// Register kullanıcı kaydı ve şifre hashleme işlemini gerçekleştirir
+// Register handles user creation + wallet creation
+// Register kullanıcı oluşturur ve otomatik olarak cüzdan açar
 func (s *AuthService) Register(email, password string) error {
 
-	// Hash the user's password securely
-	// Kullanıcının şifresini güvenli bir şekilde hash'le
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
 		s.log.Error("Password hashing failed")
 		return err
 	}
 
-	// Construct user model
-	// Kullanıcı modelini oluştur
 	user := models.User{
 		Email:        email,
 		PasswordHash: string(hash),
 	}
 
-	// Save user via repository
-	// Kullanıcıyı repository aracılığı ile kaydet
-	if err := s.repo.Create(&user); err != nil {
+	if err := s.userRepo.Create(&user); err != nil {
 		s.log.Error("User creation failed")
 		return err
 	}
 
-	s.log.Info("User registered successfully", map[string]interface{}{
-		"email": user.Email,
-		"id":    user.ID,
+	// Create wallet with balance = 0
+	// Cüzdan oluşturulur, başlangıç bakiyesi = 0
+	wallet := models.Wallet{
+		UserID:  user.ID,
+		Balance: 0,
+	}
+
+	if err := s.walletRepo.Create(&wallet); err != nil {
+		s.log.Error("Wallet creation failed", map[string]interface{}{
+			"user_id": user.ID,
+		})
+		// optional: rollback user creation
+		return err
+	}
+
+	s.log.Info("User and wallet created successfully", map[string]interface{}{
+		"user_id":   user.ID,
+		"wallet_id": wallet.ID,
+		"balance":   wallet.Balance,
 	})
 
 	return nil
@@ -63,7 +76,7 @@ func (s *AuthService) Login(email, password string) (string, error) {
 
 	// Fetch user by email from database
 	// Kullanıcıyı email üzerinden veritabanından al
-	user, err := s.repo.FindByEmail(email)
+	user, err := s.userRepo.FindByEmail(email)
 	if err != nil {
 		return "", fiber.ErrUnauthorized
 	}

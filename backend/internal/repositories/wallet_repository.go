@@ -32,3 +32,9 @@ func (r *WalletRepository) FindByUserID(userID uint) (*models.Wallet, error) {
 func (r *WalletRepository) Update(wallet *models.Wallet) error {
 	return r.db.GetDB().Save(wallet).Error
 }
+
+// Create creates a new wallet record
+// Create yeni bir cüzdan kaydı oluşturur
+func (r *WalletRepository) Create(wallet *models.Wallet) error {
+	return r.db.GetDB().Create(wallet).Error
+}
