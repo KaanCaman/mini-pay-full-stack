@@ -41,6 +41,9 @@ func RegisterRoutes(app *fiber.App, db database.DB, log logger.Logger) {
 
 	auth := app.Group("/wallet", middleware.AuthMiddleware())
 	auth.Get("/balance", handlers.GetBalance(walletService))
+	auth.Post("/deposit", handlers.Deposit(walletService))
+	auth.Post("/withdraw", handlers.Withdraw(walletService))
+	auth.Post("/transfer", handlers.Transfer(walletService, db.GetDB()))
 
 	// Test endpoint
 	app.Get("/", func(c *fiber.Ctx) error {

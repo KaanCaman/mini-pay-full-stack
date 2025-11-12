@@ -4,6 +4,8 @@ import (
 	"errors"
 	"mini-pay-backend/internal/logger"
 	"mini-pay-backend/internal/repositories"
+
+	"gorm.io/gorm"
 )
 
 // WalletService contains wallet-related business logic
@@ -102,4 +104,116 @@ func (s *WalletService) AdjustBalance(userID uint, amount int64) error {
 	})
 
 	return nil
+}
+
+// Deposit adds funds to the user's wallet
+// Deposit kullanıcı cüzdanına para ekler
+func (s *WalletService) Deposit(userID uint, amount int64) error {
+	if amount <= 0 {
+		return errors.New("invalid deposit amount")
+	}
+
+	wallet, err := s.walletRepo.FindByUserID(userID)
+	if err != nil {
+		s.log.Error("Wallet not found", map[string]interface{}{"user_id": userID})
+		return err
+	}
+
+	wallet.Balance += amount
+	if err := s.walletRepo.Update(wallet); err != nil {
+		s.log.Error("Deposit failed", map[string]interface{}{"user_id": userID})
+		return err
+	}
+
+	s.log.Info("Deposit successful", map[string]interface{}{
+		"user_id": userID,
+		"amount":  amount,
+		"balance": wallet.Balance,
+	})
+	return nil
+}
+
+// Withdraw subtracts funds from wallet if balance is sufficient
+// Withdraw, bakiyeden yeterli para varsa çeker
+func (s *WalletService) Withdraw(userID uint, amount int64) error {
+	if amount <= 0 {
+		return errors.New("invalid withdraw amount")
+	}
+
+	wallet, err := s.walletRepo.FindByUserID(userID)
+	if err != nil {
+		s.log.Error("Wallet not found", map[string]interface{}{"user_id": userID})
+		return err
+	}
+
+	if wallet.Balance < amount {
+		s.log.Error("Insufficient funds", map[string]interface{}{
+			"user_id": userID,
+			"balance": wallet.Balance,
+			"attempt": amount,
+		})
+		return errors.New("insufficient funds")
+	}
+
+	wallet.Balance -= amount
+	if err := s.walletRepo.Update(wallet); err != nil {
+		s.log.Error("Withdraw update failed", map[string]interface{}{"user_id": userID})
+		return err
+	}
+
+	s.log.Info("Withdraw successful", map[string]interface{}{
+		"user_id": userID,
+		"amount":  amount,
+		"balance": wallet.Balance,
+	})
+	return nil
+}
+
+// Transfer sends money between two users atomically
+// Transfer iki kullanıcı arasında para transferini atomic şekilde yapar
+func (s *WalletService) Transfer(db *gorm.DB, fromUserID, toUserID uint, amount int64) error {
+	if amount <= 0 {
+		return errors.New("invalid transfer amount")
+	}
+	if fromUserID == toUserID {
+		return errors.New("cannot transfer to self")
+	}
+
+	return db.Transaction(func(tx *gorm.DB) error {
+		fromWallet, err := s.walletRepo.FindByUserID(fromUserID)
+		if err != nil {
+			return err
+		}
+		toWallet, err := s.walletRepo.FindByUserID(toUserID)
+		if err != nil {
+			return err
+		}
+
+		if fromWallet.Balance < amount {
+			s.log.Error("Insufficient funds for transfer", map[string]interface{}{
+				"from_user": fromUserID,
+				"balance":   fromWallet.Balance,
+				"attempt":   amount,
+			})
+			return errors.New("insufficient funds")
+		}
+
+		fromWallet.Balance -= amount
+		toWallet.Balance += amount
+
+		if err := tx.Save(fromWallet).Error; err != nil {
+			return err
+		}
+		if err := tx.Save(toWallet).Error; err != nil {
+			return err
+		}
+
+		s.log.Info("Transfer completed", map[string]interface{}{
+			"from_user": fromUserID,
+			"to_user":   toUserID,
+			"amount":    amount,
+		})
+
+		return nil
+	})
 }
