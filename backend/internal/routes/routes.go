@@ -22,8 +22,8 @@ func RegisterRoutes(app *fiber.App, db database.DB, log logger.Logger) {
 	// Build service
 	// Service oluştur
 	authService := services.NewAuthService(userRepo, walletRepo, log)
-	walletService := services.NewWalletService(walletRepo, log)
 	transactionService := services.NewTransactionService(transactionRepo, log)
+	walletService := services.NewWalletService(walletRepo, transactionService, log)
 
 	// Register routes
 	// Route’ları bağla
