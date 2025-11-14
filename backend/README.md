@@ -1,86 +1,105 @@
-# 🪙 Mini-Pay Backend
+# 🪙 Mini-Pay Backend (Go + Fiber + GORM)
 
-Mini-Pay is a secure, modular, and testable wallet backend built with **Go**, **Fiber**, **GORM**, and **Zap logger**.
-It implements **JWT-based authentication**, **user wallet management**, and **atomic transactions** (Deposit / Withdraw / Transfer).
+Mini-Pay is a secure, modular, and testable backend wallet system built with **Go**, **Fiber**, **GORM**, **Zap Logger**, and **JWT authentication**.
+
+It supports:
+
+- **User registration & login**
+- **JWT-protected wallet operations**
+- **Deposit / Withdraw / Transfer**
+- **Atomic ACID-safe transfers**
+- **Full Transaction History**
+- **Configurable environment via `.env`**
+- **Standardized JSON Error Responses**
+- **Clean Architecture (Handlers → Services → Repositories)**
 
 ---
 
 ## ⚙️ Tech Stack
 
-| Component          | Description                                                 |
-| ------------------ | ----------------------------------------------------------- |
-| **Language**       | Go (Golang)                                                 |
-| **Framework**      | [Fiber v2](https://gofiber.io/)                             |
-| **ORM**            | [GORM](https://gorm.io/)                                    |
-| **Database**       | SQLite (for development)                                    |
-| **Logger**         | [Uber Zap](https://github.com/uber-go/zap)                  |
-| **Authentication** | JWT (HS256)                                                 |
-| **Architecture**   | Clean Architecture — Repository / Service / Handler pattern |
+| Component          | Description                                   |
+| ------------------ | --------------------------------------------- |
+| **Language**       | Go (Golang)                                   |
+| **HTTP Framework** | Fiber v2                                      |
+| **ORM**            | GORM                                          |
+| **Database**       | SQLite (dev) — easily switchable in config    |
+| **Logging**        | Uber Zap (structured logs)                    |
+| **Auth**           | JWT (HS256)                                   |
+| **Config**         | Environment variables via `.env` + LoadConfig |
+| **Architecture**   | Clean Architecture + Dependency Injection     |
 
 ---
 
 ## 🧱 Project Structure
 
-```sh
-mini-pay-full-stack/
+```shell
+backend/
 │
-├── backend/
-│   ├── cmd/
-│   │   └── api/
-│   │       └── main.go            # Entry point
-│   ├── internal/
-│   │   ├── config/                # Future configs
-│   │   ├── database/              # DB layer (interface + GORM)
-│   │   ├── handlers/              # Fiber HTTP handlers
-│   │   ├── logger/                # Zap-based logger
-│   │   ├── middleware/            # JWT validation middleware
-│   │   ├── models/                # GORM models (User, Wallet)
-│   │   ├── repositories/          # Data access layer
-│   │   ├── routes/                # Route registration
-│   │   ├── services/              # Business logic (Auth, Wallet)
-│   │   └── utils/                 # Utility functions (JWT, etc.)
-│   └── go.mod
+├── cmd/
+│   └── api/
+│       └── main.go              # App entrypoint
+│
+├── internal/
+│   ├── config/                  # .env loader, AppConfig
+│   ├── database/                # DB interface + GORM implementation
+│   ├── handlers/                # HTTP handlers (Auth, Wallet, Transactions)
+│   ├── logger/                  # Zap logger wrapper
+│   ├── middleware/              # JWT Auth middleware
+│   ├── models/                  # GORM models (User, Wallet, Transaction)
+│   ├── repositories/            # Database access layer
+│   ├── routes/                  # Route definitions
+│   ├── services/                # Business logic
+│   └── utils/                   # JWT utils, Error utils
+│
+└── go.mod
 ```
 
 ---
 
-## 🔐 Authentication
+# 🔐 Authentication
 
-All protected routes use the **JWT middleware**, which validates tokens and extracts the `user_id` claim from the payload.
+All protected endpoints use:
 
-Each request runs in an **isolated Fiber context**, ensuring no cross-user data leakage.
-Every token uniquely identifies one user.
+```
+Authorization: Bearer <token>
+```
 
----
+Middleware extracts claims:
 
-## 📡 API Routes
-
-### 🧍 User Authentication
-
-| Method | Endpoint    | Description                                           |
-| ------ | ----------- | ----------------------------------------------------- |
-| `POST` | `/register` | Register a new user and automatically create a wallet |
-| `POST` | `/login`    | Authenticate user and return JWT token                |
-| `GET`  | `/me`       | Validate token and return user ID                     |
+- Validates token
+- Extracts `user_id`
+- Stores `user_id` in `c.Locals("user_id")`
+- Ensures users **cannot access each other’s data**
 
 ---
 
-### 💰 Wallet Operations (JWT Protected)
+# 📡 API Routes
 
-> All routes below require an `Authorization: Bearer <token>` header.
+## 🧍 User Authentication
+
+| Method | Endpoint    | Description                                   |
+| ------ | ----------- | --------------------------------------------- |
+| POST   | `/register` | Create a user + auto-create wallet            |
+| POST   | `/login`    | Login, return JWT token                       |
+| GET    | `/me`       | Validate JWT and return authenticated user ID |
+
+---
+
+## 💰 Wallet Operations (JWT Required)
 
 | Method | Endpoint           | Description                               |
 | ------ | ------------------ | ----------------------------------------- |
-| `GET`  | `/wallet/balance`  | Returns user’s wallet balance             |
-| `POST` | `/wallet/deposit`  | Add funds to user’s wallet                |
-| `POST` | `/wallet/withdraw` | Withdraw funds if balance is sufficient   |
-| `POST` | `/wallet/transfer` | Transfer funds atomically to another user |
+| GET    | `/wallet/balance`  | Get current wallet balance                |
+| POST   | `/wallet/deposit`  | Add funds to your wallet                  |
+| POST   | `/wallet/withdraw` | Withdraw money if balance is sufficient   |
+| POST   | `/wallet/transfer` | Send money **atomically** to another user |
+| GET    | `/wallet/history`  | View complete transaction history         |
 
 ---
 
-### 🧾 Example Requests
+# 🧾 Example Requests
 
-#### 1. Register a User
+### Register
 
 ```bash
 curl -X POST http://localhost:3000/register \
@@ -88,7 +107,7 @@ curl -X POST http://localhost:3000/register \
   -d '{"email":"john@example.com","password":"123456"}'
 ```
 
-#### 2. Login
+### Login
 
 ```bash
 curl -X POST http://localhost:3000/login \
@@ -96,94 +115,190 @@ curl -X POST http://localhost:3000/login \
   -d '{"email":"john@example.com","password":"123456"}'
 ```
 
-#### 3. Get Balance
+### Get Balance
 
 ```bash
 curl -X GET http://localhost:3000/wallet/balance \
   -H "Authorization: Bearer <TOKEN>"
 ```
 
-#### 4. Deposit
+### Deposit
 
 ```bash
 curl -X POST http://localhost:3000/wallet/deposit \
   -H "Authorization: Bearer <TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"amount":5000}'
+  -d '{"amount":10000}'
 ```
 
-#### 5. Transfer
+### Transfer
 
 ```bash
 curl -X POST http://localhost:3000/wallet/transfer \
   -H "Authorization: Bearer <TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"to_user_id":2, "amount":2500}'
+  -d '{"to_user_id":2, "amount":5000}'
+```
+
+### Transaction History
+
+```bash
+curl -X GET http://localhost:3000/wallet/history \
+  -H "Authorization: Bearer <TOKEN>"
 ```
 
 ---
 
-## 🧠 Architecture Overview
+# 🗃️ Models Overview
 
-### ✅ High Cohesion, Low Coupling
+### User
 
-- Each package has a **single responsibility**:
+- ID
+- Email (unique)
+- PasswordHash
 
-  - `services` = business logic
-  - `repositories` = database queries
-  - `handlers` = HTTP layer
+### Wallet
 
-- Dependencies are injected via interfaces (for testability).
+- ID
+- UserID (1:1)
+- Balance (in cents, int64)
 
-### 🔄 Transaction Safety
+### Transaction
 
-- `Transfer` uses **GORM transactions** to ensure **atomicity** (ACID-safe).
-- Prevents negative balances and ensures rollback on error.
-
-### 🧰 Logging
-
-- Built on **Uber Zap**, with structured `Info` and `Error` logs.
-- Logs include contextual fields (user_id, balance, amount, etc.) for easy debugging.
-
-### 🔒 Security
-
-- Token-based authentication (JWT HS256)
-- Token validation on every protected route
-- Isolated user scopes (no access to other users’ data)
+- UserID
+- Type: `deposit`, `withdraw`, `transfer_sent`, `transfer_received`
+- Amount
+- TargetUserID (nullable)
+- BalanceAfter
+- Timestamp
 
 ---
 
-## 🧩 Future Roadmap
+# 🧠 Architecture Overview
 
-| Feature                | Description                                             |
-| ---------------------- | ------------------------------------------------------- |
-| 🧾 Transaction History | Store and display deposit, withdraw, and transfer logs  |
-| 🔔 Notifications       | Expo push integration for balance changes and transfers |
-| ♻️ Refresh Tokens      | Secure re-authentication for longer sessions            |
-| 🧪 Unit Tests          | Repository + Service level testing                      |
+### ✔ High Cohesion, Low Coupling
+
+- **Handlers** → Handle HTTP only
+- **Services** → Pure business rules
+- **Repositories** → Database access
+- **Models** → ORM structures
+
+Everything depends on **interfaces**, not implementations.
 
 ---
 
-## 🚀 Run Locally
+## 🔄 Transaction Safety (ACID)
+
+Transfers run inside:
+
+```go
+db.Transaction(func(tx *gorm.DB) error {
+    ...
+})
+```
+
+Meaning:
+
+- Either _everything succeeds_
+  or
+- _Everything is rolled back_
+
+Protection includes:
+
+- No negative balances
+- No half-complete transfers
+- Correct transaction logs for sender + receiver
+
+---
+
+## 📜 Standardized Error Handling
+
+All errors follow a single JSON shape:
+
+```json
+{
+  "error": true,
+  "message": "Invalid request"
+}
+```
+
+Helpers:
+
+- `BadRequestError()`
+- `UnauthorizedError()`
+- `NotFoundError()`
+- `InternalError()`
+
+---
+
+## 🧰 Configuration System (.env)
+
+Your `.env` file can contain:
+
+```shell
+APP_ENV=development
+APP_PORT=3000
+DB_DRIVER=sqlite
+DB_NAME=mini_pay.db
+JWT_SECRET=SUPER_SECRET_KEY_123
+LOG_LEVEL=development
+```
+
+Loaded by:
+
+```go
+cfg := config.LoadConfig()
+```
+
+---
+
+## 🔍 Logging
+
+Built with **Zap SugaredLogger**.
+
+Examples:
+
+```go
+log.Info("Deposit successful", map[string]interface{}{
+    "user_id": userID,
+    "amount": amount,
+})
+```
+
+Structured logs are clean and searchable.
+
+---
+
+# 🚀 Run Locally
 
 ```bash
-# Navigate into backend
 cd backend
-
-# Run the server
 go run cmd/api/main.go
 ```
 
-The API will be available at:
+Server runs at:
 
-```http
-http://127.0.0.1:3000
+```shell
+http://localhost:3000
 ```
 
 ---
 
-## 🧑‍💻 Author
+# 🧩 Roadmap
 
-**Mini-Pay Backend**
-Developed by [Kaan Caman](https://github.com/kaancaman)
-Focused on clean Go architecture, security, and modular design.
+| Feature                  | Status |
+| ------------------------ | ------ |
+| Deposit / Withdraw       | ✅     |
+| Transfer (atomic)        | ✅     |
+| Transaction history      | ✅     |
+| JWT Auth                 | ✅     |
+| Standardized errors      | ✅     |
+| Config / .env            | ✅     |
+| Push notifications       | 🔜     |
+| Refresh tokens           | 🔜     |
+| Unit + integration tests | 🔜     |
+
+---
+
+# 👨‍💻 Author
+
+**Mini-Pay Backend — by Kaan Caman**
+Clean, secure, and scalable financial backend architecture powered by Go.
