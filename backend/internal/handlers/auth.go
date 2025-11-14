@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"mini-pay-backend/internal/services"
+	"mini-pay-backend/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -17,11 +18,11 @@ func Register(authService *services.AuthService) fiber.Handler {
 		}
 
 		if err := c.BodyParser(&body); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Invalid request")
+			return utils.BadRequestError(c, "Invalid request")
 		}
 
 		if err := authService.Register(body.Email, body.Password); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "User already exists or invalid input")
+			return utils.BadRequestError(c, "User already exists or invalid input")
 		}
 
 		return c.JSON(fiber.Map{"message": "Registration successful ✅"})
@@ -39,12 +40,12 @@ func Login(authService *services.AuthService) fiber.Handler {
 		}
 
 		if err := c.BodyParser(&body); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Invalid request")
+			return utils.BadRequestError(c, "Invalid request")
 		}
 
 		token, err := authService.Login(body.Email, body.Password)
 		if err != nil {
-			return fiber.NewError(fiber.StatusUnauthorized, "Invalid email or password")
+			return utils.UnauthorizedError(c, "Invalid email or password")
 		}
 
 		return c.JSON(fiber.Map{"token": token})

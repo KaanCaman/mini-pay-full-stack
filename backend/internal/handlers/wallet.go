@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"mini-pay-backend/internal/services"
+	"mini-pay-backend/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -18,7 +19,7 @@ func GetBalance(walletService *services.WalletService) fiber.Handler {
 
 		balance, err := walletService.GetBalance(userID)
 		if err != nil {
-			return fiber.NewError(fiber.StatusNotFound, "Wallet not found")
+			return utils.NotFoundError(c, "Wallet not found")
 		}
 
 		// Convert cents → float for display
@@ -39,11 +40,11 @@ func Deposit(walletService *services.WalletService) fiber.Handler {
 			Amount int64 `json:"amount"`
 		}
 		if err := c.BodyParser(&body); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+			return utils.BadRequestError(c, "Invalid request body")
 		}
 
 		if err := walletService.Deposit(userID, body.Amount); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+			return utils.BadRequestError(c, err.Error())
 		}
 
 		return c.JSON(fiber.Map{"message": "Deposit successful"})
@@ -60,11 +61,11 @@ func Withdraw(walletService *services.WalletService) fiber.Handler {
 			Amount int64 `json:"amount"`
 		}
 		if err := c.BodyParser(&body); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+			return utils.BadRequestError(c, "Invalid request body")
 		}
 
 		if err := walletService.Withdraw(userID, body.Amount); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+			return utils.BadRequestError(c, err.Error())
 		}
 
 		return c.JSON(fiber.Map{"message": "Withdraw successful"})
@@ -82,11 +83,11 @@ func Transfer(walletService *services.WalletService, db any) fiber.Handler {
 			Amount   int64 `json:"amount"`
 		}
 		if err := c.BodyParser(&body); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+			return utils.BadRequestError(c, "Invalid request body")
 		}
 
 		if err := walletService.Transfer(db.(*gorm.DB), fromUserID, body.ToUserID, body.Amount); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+			return utils.BadRequestError(c, err.Error())
 		}
 
 		return c.JSON(fiber.Map{"message": "Transfer successful"})

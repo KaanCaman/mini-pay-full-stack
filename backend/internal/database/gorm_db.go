@@ -1,6 +1,8 @@
 package database
 
 import (
+	"errors"
+	"mini-pay-backend/internal/config"
 	"mini-pay-backend/internal/models"
 
 	"gorm.io/driver/sqlite"
@@ -20,11 +22,18 @@ type GormDB struct {
 //
 // GORM kullanarak yeni bir SQLite veritabanı oluşturur,
 // DB arayüzünü uygulayan bir GormDB örneği döndürür.
-func NewGormDB() (*GormDB, error) {
+func NewGormDB(cfg *config.AppConfig) (*GormDB, error) {
+	var dialector gorm.Dialector
+
+	if cfg.DBDriver == "sqlite" {
+		dialector = sqlite.Open(cfg.DBName)
+	} else {
+		return nil, errors.New("unsupported DB driver")
+	}
 
 	// Opens a SQLite database file named "mini_pay.db".
 	// "mini_pay.db" isminde bir SQLite veritabanı dosyasını açar.
-	database, err := gorm.Open(sqlite.Open("mini_pay.db"), &gorm.Config{})
+	database, err := gorm.Open(dialector, &gorm.Config{})
 	if err != nil {
 		// If an error occurs, return it to the caller.
 		// Bir hata olursa, çağırana hatayı döndürür.

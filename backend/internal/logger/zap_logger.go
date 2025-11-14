@@ -12,14 +12,20 @@ type ZapLogger struct {
 
 // NewZapLogger initializes production zap logger
 // NewZapLogger production zap logger'ı başlatır
-func NewZapLogger() (*ZapLogger, error) {
-	l, err := zap.NewDevelopment()
+func NewZapLogger(level string) (*ZapLogger, error) {
+	var l *zap.Logger
+	var err error
+
+	if level == "production" {
+		l, err = zap.NewProduction()
+	} else {
+		l, err = zap.NewDevelopment()
+	}
+
 	if err != nil {
 		return nil, err
 	}
 
-	// Use SugaredLogger directly for easier structured logging
-	// Daha kolay structured logging için SugaredLogger doğrudan kullanılır
 	return &ZapLogger{logger: l.Sugar()}, nil
 }
 

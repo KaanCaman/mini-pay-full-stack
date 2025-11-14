@@ -8,7 +8,11 @@ import (
 
 // Secret key used to sign the JWT tokens
 // JWT tokenlarını imzalamak için kullanılan gizli anahtar
-var JwtSecret = []byte("CHANGE_THIS_SECRET_LATER")
+var JwtSecret []byte
+
+func InitJWT(secret []byte) {
+	JwtSecret = secret
+}
 
 // GenerateToken creates a signed JWT token containing the user ID
 // Bir kullanıcı ID’si içeren imzalı bir JWT token üretir

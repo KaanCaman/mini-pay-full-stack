@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"mini-pay-backend/internal/services"
+	"mini-pay-backend/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -14,7 +15,7 @@ func GetTransactionHistory(transactionService *services.TransactionService) fibe
 
 		history, err := transactionService.GetHistory(userID)
 		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve transaction history")
+			return utils.InternalError(c, "Failed to retrieve transaction history")
 		}
 
 		return c.JSON(fiber.Map{
