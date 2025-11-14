@@ -17,11 +17,13 @@ func RegisterRoutes(app *fiber.App, db database.DB, log logger.Logger) {
 	// Repository oluştur
 	userRepo := repositories.NewUserRepository(db)
 	walletRepo := repositories.NewWalletRepository(db)
+	transactionRepo := repositories.NewTransactionRepository(db)
 
 	// Build service
 	// Service oluştur
 	authService := services.NewAuthService(userRepo, walletRepo, log)
 	walletService := services.NewWalletService(walletRepo, log)
+	transactionService := services.NewTransactionService(transactionRepo, log)
 
 	// Register routes
 	// Route’ları bağla
@@ -44,6 +46,7 @@ func RegisterRoutes(app *fiber.App, db database.DB, log logger.Logger) {
 	auth.Post("/deposit", handlers.Deposit(walletService))
 	auth.Post("/withdraw", handlers.Withdraw(walletService))
 	auth.Post("/transfer", handlers.Transfer(walletService, db.GetDB()))
+	auth.Get("/history", handlers.GetTransactionHistory(transactionService))
 
 	// Test endpoint
 	app.Get("/", func(c *fiber.Ctx) error {
