@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "mini-pay",
+    "slug": "mini-pay",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+
+    "ios": {
+      "icon": {
+        "dark": "./assets/logo/ios-light.png",
+        "light": "./assets/logo/ios-dark.png",
+        "tinted": "./assets/logo/ios-tinted.png"
+      },
+      "bundleIdentifier": "com.kaancaman.minipay",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.kaancaman.minipay",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo/adaptive-icon.png",
+        "monochromeImage": "./assets/logo/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "03413d57-c6b6-4167-a746-c7a3ba319bb1"
+      }
+    },
+    "owner": "mrnothig"
+  }
+}
