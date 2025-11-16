@@ -12,7 +12,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
     "ios": {
       "icon": {
         "dark": "./assets/logo/ios-light.png",
@@ -40,6 +39,15 @@
         "projectId": "03413d57-c6b6-4167-a746-c7a3ba319bb1"
       }
     },
-    "owner": "mrnothig"
+    "owner": "mrnothig",
+    "plugins": [
+      "expo-localization",
+      {
+        "supportedLocales": {
+          "ios": ["tr", "en"],
+          "android": ["tr", "en"]
+        }
+      }
+    ]
   }
 }

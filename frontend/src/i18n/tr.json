@@ -1,0 +1,26 @@
+{
+  "auth": {
+    "login": "Giriş Yap",
+    "register": "Hesap Oluştur",
+    "email": "E-posta",
+    "password": "Şifre",
+    "forgotPassword": "Şifremi Unuttum?"
+  },
+  "home": {
+    "hello": "Merhaba",
+    "balance": "Mevcut Bakiye",
+    "recentTransactions": "Son İşlemler",
+    "seeAll": "Tümünü Gör"
+  },
+  "actions": {
+    "pay": "Öde",
+    "sendMoney": "Para Gönder",
+    "requestMoney": "Para İste"
+  },
+  "history": {
+    "title": "İşlem Geçmişi",
+    "search": "İşlemlerde ara...",
+    "today": "Bugün",
+    "yesterday": "Dün"
+  }
+}
