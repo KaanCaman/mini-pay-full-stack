@@ -22,5 +22,12 @@
     "search": "Search transactions...",
     "today": "Today",
     "yesterday": "Yesterday"
+  },
+  "tabs": {
+    "home": "Home",
+    "history": "History",
+    "payment": "Payment",
+    "profile": "Profile",
+    "settings": "Settings"
   }
 }

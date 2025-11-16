@@ -22,5 +22,12 @@
     "search": "İşlemlerde ara...",
     "today": "Bugün",
     "yesterday": "Dün"
+  },
+  "tabs": {
+    "home": "Ana Sayfa",
+    "history": "Geçmiş",
+    "payment": "Ödeme",
+    "profile": "Profil",
+    "settings": "Ayarlar"
   }
 }
