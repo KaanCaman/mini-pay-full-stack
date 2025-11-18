@@ -19,19 +19,27 @@ func GetBalance(walletService *services.WalletService) fiber.Handler {
 
 		balance, err := walletService.GetBalance(userID)
 		if err != nil {
-			return utils.NotFoundError(c, "Wallet not found")
+			return utils.NotFoundError(
+				c,
+				utils.CodeWalletNotFound,
+				"Wallet not found",
+			)
 		}
 
-		// Convert cents → float for display
-		// Kuruşu gösterim için çevir
-		return c.JSON(fiber.Map{
-			"balance": float64(balance) / 100.0,
-		})
+		return utils.Success(
+			c,
+			fiber.StatusOK,
+			utils.CodeWalletBalanceFetched,
+			"Wallet balance retrieved",
+			fiber.Map{
+				"userId":  userID,
+				"balance": float64(balance) / 100.0,
+			},
+		)
 	}
 }
 
-// Deposit endpoint
-// Kullanıcının cüzdanına para ekler
+// Deposit endpoint – add funds
 func Deposit(walletService *services.WalletService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID := uint(c.Locals("user_id").(float64))
@@ -40,19 +48,35 @@ func Deposit(walletService *services.WalletService) fiber.Handler {
 			Amount int64 `json:"amount"`
 		}
 		if err := c.BodyParser(&body); err != nil {
-			return utils.BadRequestError(c, "Invalid request body")
+			return utils.BadRequestError(
+				c,
+				utils.CodeRequestBodyInvalid,
+				"Invalid request body",
+			)
 		}
 
 		if err := walletService.Deposit(userID, body.Amount); err != nil {
-			return utils.BadRequestError(c, err.Error())
+			return utils.BadRequestError(
+				c,
+				utils.CodeWalletNotFound, // ya da başka spesifik kod açarsın
+				err.Error(),
+			)
 		}
 
-		return c.JSON(fiber.Map{"message": "Deposit successful"})
+		return utils.Success(
+			c,
+			fiber.StatusOK,
+			utils.CodeWalletDepositSuccess,
+			"Deposit successful",
+			fiber.Map{
+				"userId": userID,
+				"amount": body.Amount,
+			},
+		)
 	}
 }
 
-// Withdraw endpoint
-// Kullanıcının cüzdanından para çeker
+// Withdraw endpoint – remove funds
 func Withdraw(walletService *services.WalletService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID := uint(c.Locals("user_id").(float64))
@@ -61,14 +85,32 @@ func Withdraw(walletService *services.WalletService) fiber.Handler {
 			Amount int64 `json:"amount"`
 		}
 		if err := c.BodyParser(&body); err != nil {
-			return utils.BadRequestError(c, "Invalid request body")
+			return utils.BadRequestError(
+				c,
+				utils.CodeRequestBodyInvalid,
+				"Invalid request body",
+			)
 		}
 
 		if err := walletService.Withdraw(userID, body.Amount); err != nil {
-			return utils.BadRequestError(c, err.Error())
+			code := utils.CodeWalletInsufficientFunds
+			if err.Error() != "insufficient funds" {
+				// Daha generic bir hata kodu istersen burada değiştirebilirsin
+				code = utils.CodeWalletNotFound
+			}
+			return utils.BadRequestError(c, code, err.Error())
 		}
 
-		return c.JSON(fiber.Map{"message": "Withdraw successful"})
+		return utils.Success(
+			c,
+			fiber.StatusOK,
+			utils.CodeWalletWithdrawSuccess,
+			"Withdraw successful",
+			fiber.Map{
+				"userId": userID,
+				"amount": body.Amount,
+			},
+		)
 	}
 }
 
@@ -83,13 +125,31 @@ func Transfer(walletService *services.WalletService, db any) fiber.Handler {
 			Amount   int64 `json:"amount"`
 		}
 		if err := c.BodyParser(&body); err != nil {
-			return utils.BadRequestError(c, "Invalid request body")
+			return utils.BadRequestError(
+				c,
+				utils.CodeRequestBodyInvalid,
+				"Invalid request body",
+			)
 		}
 
 		if err := walletService.Transfer(db.(*gorm.DB), fromUserID, body.ToUserID, body.Amount); err != nil {
-			return utils.BadRequestError(c, err.Error())
+			code := utils.CodeWalletInsufficientFunds
+			if err.Error() != "insufficient funds" {
+				code = utils.CodeInternalErr
+			}
+			return utils.BadRequestError(c, code, err.Error())
 		}
 
-		return c.JSON(fiber.Map{"message": "Transfer successful"})
+		return utils.Success(
+			c,
+			fiber.StatusOK,
+			utils.CodeWalletTransferSuccess,
+			"Transfer successful",
+			fiber.Map{
+				"fromUserId": fromUserID,
+				"toUserId":   body.ToUserID,
+				"amount":     body.Amount,
+			},
+		)
 	}
 }

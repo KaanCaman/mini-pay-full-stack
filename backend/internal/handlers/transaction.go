@@ -15,12 +15,22 @@ func GetTransactionHistory(transactionService *services.TransactionService) fibe
 
 		history, err := transactionService.GetHistory(userID)
 		if err != nil {
-			return utils.InternalError(c, "Failed to retrieve transaction history")
+			return utils.InternalError(
+				c,
+				utils.CodeInternalErr,
+				"Failed to retrieve transaction history",
+			)
 		}
 
-		return c.JSON(fiber.Map{
-			"user_id":      userID,
-			"transactions": history,
-		})
+		return utils.Success(
+			c,
+			fiber.StatusOK,
+			utils.CodeTxHistoryFetched,
+			"Transaction history fetched",
+			fiber.Map{
+				"userId":       userID,
+				"transactions": history,
+			},
+		)
 	}
 }

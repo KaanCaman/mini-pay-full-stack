@@ -21,7 +21,7 @@ func AuthMiddleware() fiber.Handler {
 		// Must be: "Bearer <token>"
 		// Format: "Bearer <token>" olmalı
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			return utils.UnauthorizedError(c, "Missing or invalid token")
+			return utils.UnauthorizedError(c, utils.CodeAuthTokenMissing, "Missing or invalid token")
 		}
 
 		// Extract token part
@@ -34,7 +34,7 @@ func AuthMiddleware() fiber.Handler {
 			return utils.JwtSecret, nil
 		})
 		if err != nil || !token.Valid {
-			return utils.UnauthorizedError(c, "Invalid token")
+			return utils.UnauthorizedError(c, utils.CodeAuthTokenInvalid, "Invalid token")
 		}
 
 		// Extract user_id from claims
