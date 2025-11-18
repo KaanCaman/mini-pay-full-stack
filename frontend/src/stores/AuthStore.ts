@@ -31,6 +31,10 @@ export class AuthStore {
   // login çağrıları sırasında yükleme durumunu belirtir
   loading = false;
 
+  // holds last error message for UI display
+  // UI’da gösterilecek son hata mesajını saklar
+  error: string | null = null;
+
   // constructor connects API service and makes entire class observable
   // constructor, API servisi bağlar ve tüm sınıfı observable hale getirir
   constructor(api: IApiService) {
@@ -39,6 +43,14 @@ export class AuthStore {
     // makes all fields observable and all methods auto-bound
     // tüm alanları observable ve tüm metotları otomatik bağlanmış hale getirir
     makeAutoObservable(this);
+  }
+
+  // sets error message for UI and logging
+  // UI ve loglama için error mesajını ayarlar
+  setError(message: string | null) {
+    runInAction(() => {
+      this.error = message;
+    });
   }
 
   // computed property returning true if user is logged in (has token)
@@ -57,18 +69,21 @@ export class AuthStore {
         SecureStore.getItemAsync(TOKEN_KEY),
         SecureStore.getItemAsync(USER_ID_KEY),
       ]);
+      console.log("authstorees : ", storedToken, storedUserId);
+
+      const isAuth = await this.api.isAuthenticated(storedToken || "");
+
+      // injects token into global http client so API calls authenticate correctly
+      // token'ı global http client'a enjekte eder, böylece API çağrıları doğru şekilde yetkilendirilir
+      if (this.isAuthenticated) setAccessToken(storedToken);
 
       // safely updates observable fields inside MobX action
       // observable alanları güvenli şekilde güncellemek için MobX action kullanılır
       runInAction(() => {
-        this.token = storedToken;
-        this.userId = storedUserId ? Number(storedUserId) : null;
+        this.token = isAuth ? storedToken : null;
+        this.userId = isAuth && storedUserId ? Number(storedUserId) : null;
         this.hydrated = true;
       });
-
-      // injects token into global http client so API calls authenticate correctly
-      // token'ı global http client'a enjekte eder, böylece API çağrıları doğru şekilde yetkilendirilir
-      setAccessToken(storedToken);
     } catch (e) {
       // ensures hydration completes even if something goes wrong
       // bir hata olsa bile hydration sürecinin tamamlanmasını garanti eder
@@ -84,6 +99,7 @@ export class AuthStore {
     // starts loading state so UI can show spinner
     // UI gösterimi için loading durumunu başlatır
     this.loading = true;
+    this.setError(null);
 
     try {
       // calls API and receives typed login response
@@ -107,9 +123,64 @@ export class AuthStore {
         SecureStore.setItemAsync(TOKEN_KEY, result.token),
         SecureStore.setItemAsync(USER_ID_KEY, String(result.user_id)),
       ]);
+    } catch (err: any) {
+      // extracts backend error message if exists, fallback to generic
+      // backend error mesajı varsa alır, yoksa generic hata döner
+      const message =
+        err?.response?.data?.message ||
+        "An unexpected error occurred during login.C";
+      this.setError(message);
+      throw err;
     } finally {
       // stops loading state
       // loading durumunu sonlandırır
+      runInAction(() => {
+        this.loading = false;
+      });
+    }
+  };
+
+  // handles user registration, saves token and user ID, and updates reactive state
+  // kullanıcı kayıt işlemini yönetir, token ve user ID'yi kaydeder, reactive state'i günceller
+  register = async (email: string, password: string) => {
+    // marks the store as loading, so UI can show a spinner
+    // UI'nin yükleme durumunu gösterebilmesi için loading true yapılır
+    this.loading = true;
+    this.setError(null);
+
+    try {
+      // sends register request to backend via API service
+      // API servisi üzerinden backend'e kayıt isteği gönderilir
+      const result = await this.api.register(email, password);
+
+      // safely updates MobX state inside an action
+      // MobX stateini güvenli şekilde güncellemek için runInAction kullanılır
+      runInAction(() => {
+        this.token = result.token;
+        this.userId = result.user_id;
+      });
+
+      // injects token into axios interceptor for authenticated requests
+      // doğrulanmış istekler için token'ı axios interceptor'a işler
+      setAccessToken(result.token);
+
+      // persists auth data securely using expo-secure-store
+      // kimlik bilgilerini güvenli biçimde cihazda saklar
+      await Promise.all([
+        SecureStore.setItemAsync(TOKEN_KEY, result.token),
+        SecureStore.setItemAsync(USER_ID_KEY, String(result.user_id)),
+      ]);
+    } catch (err: any) {
+      // extracts backend error message if exists, fallback to generic
+      // backend error mesajı varsa alır, yoksa generic hata döner
+      const message =
+        err?.response?.data?.message ||
+        "An unexpected error occurred during registration.";
+      this.setError(message);
+      throw err;
+    } finally {
+      // resets loading state once operation is complete
+      // işlem tamamlandığında loading state'i false yapılır
       runInAction(() => {
         this.loading = false;
       });

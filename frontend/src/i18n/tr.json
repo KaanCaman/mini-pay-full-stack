@@ -1,10 +1,30 @@
 {
+  "app": {
+    "name": "Mini Pay"
+  },
   "auth": {
     "login": "Giriş Yap",
+    "email_placeholder": "E-posta adresinizi girin",
+    "password_placeholder": "Şifrenizi girin",
+    "forgot_password": "Şifrenizi mi unuttunuz?",
+    "welcome_back": "Tekrar Hoşgeldiniz!",
     "register": "Hesap Oluştur",
     "email": "E-posta",
     "password": "Şifre",
-    "forgotPassword": "Şifremi Unuttum?"
+    "forgotPassword": "Şifremi Unuttum?",
+    "no_account": "Hesabınız yok mu?",
+    "go_register": "Kayıt Ol",
+    "register_fill_fields": "Lütfen tüm alanları doldurun",
+    "register_password_mismatch": "Şifreler eşleşmiyor",
+    "login_error": "Giriş işleminde bir hata oluştu",
+    "register_error": "Kayıt işleminde bir hata oluştu",
+    "register_invalid_email": "Geçersiz e-posta adresi",
+    "confirm_password": "Şifreyi Onayla",
+    "confirm_password_placeholder": "Şifrenizi tekrar girin",
+    "already_have_account": "Zaten hesabınız var mı?",
+    "create_account": "Hesap Oluştur",
+
+    "go_login": "Giriş Yap"
   },
   "home": {
     "hello": "Merhaba",
@@ -29,5 +49,12 @@
     "payment": "Ödeme",
     "profile": "Profil",
     "settings": "Ayarlar"
+  },
+  "common": {
+    "ok": "Tamam",
+    "cancel": "İptal",
+    "close": "Kapat",
+    "error": "Hata",
+    "info": "Bilgi"
   }
 }

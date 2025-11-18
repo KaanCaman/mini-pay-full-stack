@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from "axios";
+import { Platform } from "react-native";
 
 // holds the access token that will be attached to every request
 // her isteğe eklenmesi gereken access token değeri burada tutulur
@@ -23,16 +24,31 @@ export const setOnUnauthorized = (handler: (() => void) | null) => {
 // creates and configures a new axios client instance with interceptors
 // interceptor'larla yapılandırılmış yeni bir axios client instance oluşturur
 const createHttpClient = (): AxiosInstance => {
+  const baseURL =
+    Platform.OS === "android"
+      ? "http://10.0.2.2:3000"
+      : "http://localhost:3000";
+
   // creates axios instance with base configuration (baseURL, timeout)
   // axios instance oluşturur ve temel ayarları yapar (baseURL, timeout)
   const instance = axios.create({
-    baseURL: "http://localhost:8080",
+    baseURL: baseURL,
     timeout: 10000,
   });
 
   // request interceptor that runs before every outgoing HTTP request
   // her HTTP isteği gönderilmeden önce çalışan request interceptor
   instance.interceptors.request.use((config) => {
+    // TODO: Remove This Log in Production
+    console.log("📤 REQUEST:", {
+      method: config.method?.toUpperCase(),
+      baseURL: config.baseURL,
+      url: config.url,
+      headers: config.headers,
+      data: config.data,
+      params: config.params,
+    });
+
     // adds Authorization header only if token exists
     // token varsa Authorization header'a ekler
     if (accessToken) {
@@ -52,11 +68,27 @@ const createHttpClient = (): AxiosInstance => {
   instance.interceptors.response.use(
     // simply returns successful response as is
     // başarılı response geldiğinde olduğu gibi geri döndürür
-    (response) => response,
+    (response) => {
+      // TODO: Remove This Log in Production
+      console.log("✅ RESPONSE:", {
+        status: response.status,
+        url: response.config.url,
+        data: response.data,
+      });
+      return response;
+    },
 
     // handles error responses
     // hata response'larını işler
     (error) => {
+      // TODO: Remove This Log in Production
+      console.error("❌ RESPONSE ERROR:", {
+        status: error.response?.status,
+        url: error.config?.url,
+        data: error.response?.data,
+        message: error.message,
+      });
+
       // safely extracts status code if it exists
       // status kodunu güvenli şekilde alır
       const status = error?.response?.status;

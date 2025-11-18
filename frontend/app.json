@@ -4,11 +4,11 @@
     "slug": "mini-pay",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/logo/adaptive-icon.png",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo/splash-icon-light.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -18,6 +18,7 @@
         "light": "./assets/logo/ios-dark.png",
         "tinted": "./assets/logo/ios-tinted.png"
       },
+      "userInterfaceStyle": "automatic",
       "bundleIdentifier": "com.kaancaman.minipay",
       "supportsTablet": true
     },
@@ -40,14 +41,6 @@
       }
     },
     "owner": "mrnothig",
-    "plugins": [
-      "expo-localization",
-      {
-        "supportedLocales": {
-          "ios": ["tr", "en"],
-          "android": ["tr", "en"]
-        }
-      }
-    ]
+    "plugins": ["expo-localization"]
   }
 }

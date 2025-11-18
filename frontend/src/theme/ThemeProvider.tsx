@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useMemo,
+  useEffect,
+} from "react";
+import { Appearance, useColorScheme } from "react-native";
 import { darkColors } from "./colors.dark";
 import { lightColors } from "./colors.light";
 
@@ -11,7 +18,15 @@ const ThemeContext = createContext({
 });
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [mode, setMode] = useState<ThemeMode>("dark");
+  const [mode, setMode] = useState<ThemeMode>(useColorScheme() ?? "dark");
+
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      setMode(colorScheme === "dark" ? "dark" : "light");
+    });
+
+    return () => subscription.remove(); // Cleanup
+  }, []);
 
   const toggleTheme = () => {
     setMode((prev) => (prev === "dark" ? "light" : "dark"));
