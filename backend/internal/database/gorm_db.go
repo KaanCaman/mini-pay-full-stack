@@ -40,6 +40,11 @@ func NewGormDB(cfg *config.AppConfig) (*GormDB, error) {
 		return nil, err
 
 	}
+	// Set SQLite pragmas for better performance
+	// Daha iyi performans için SQLite pragmaları ayarlar
+	database.Exec("PRAGMA journal_mode = WAL;")
+	database.Exec("PRAGMA synchronous = NORMAL;")
+
 	// Run database migrations
 	// Veritabanı migrasyonlarını çalıştırır
 	database.AutoMigrate(&models.User{})

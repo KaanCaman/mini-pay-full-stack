@@ -58,3 +58,13 @@ func (z *ZapLogger) Error(msg string, fields ...map[string]interface{}) {
 	}
 	z.logger.Errorw(msg)
 }
+
+// Warn logs a warning message
+// Warn uyarı mesajı loglar
+func (z *ZapLogger) Warn(msg string, fields ...map[string]interface{}) {
+	if len(fields) > 0 {
+		z.logger.Warnw(msg, convertFields(fields[0])...)
+		return
+	}
+	z.logger.Warnw(msg)
+}

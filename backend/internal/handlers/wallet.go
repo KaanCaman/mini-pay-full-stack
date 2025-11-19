@@ -13,9 +13,9 @@ import (
 func GetBalance(walletService *services.WalletService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		// Extract user_id stored by AuthMiddleware
-		// AuthMiddleware tarafından saklanan user_id değerini al
-		userID := uint(c.Locals("user_id").(float64))
+		// Extract userID stored by AuthMiddleware
+		// AuthMiddleware tarafından saklanan userID değerini al
+		userID := uint(c.Locals("userID").(float64))
 
 		balance, err := walletService.GetBalance(userID)
 		if err != nil {
@@ -32,7 +32,7 @@ func GetBalance(walletService *services.WalletService) fiber.Handler {
 			utils.CodeWalletBalanceFetched,
 			"Wallet balance retrieved",
 			fiber.Map{
-				"userId":  userID,
+				"userID":  userID,
 				"balance": float64(balance) / 100.0,
 			},
 		)
@@ -42,7 +42,7 @@ func GetBalance(walletService *services.WalletService) fiber.Handler {
 // Deposit endpoint – add funds
 func Deposit(walletService *services.WalletService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		userID := uint(c.Locals("user_id").(float64))
+		userID := uint(c.Locals("userID").(float64))
 
 		var body struct {
 			Amount int64 `json:"amount"`
@@ -69,7 +69,7 @@ func Deposit(walletService *services.WalletService) fiber.Handler {
 			utils.CodeWalletDepositSuccess,
 			"Deposit successful",
 			fiber.Map{
-				"userId": userID,
+				"userID": userID,
 				"amount": body.Amount,
 			},
 		)
@@ -79,7 +79,7 @@ func Deposit(walletService *services.WalletService) fiber.Handler {
 // Withdraw endpoint – remove funds
 func Withdraw(walletService *services.WalletService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		userID := uint(c.Locals("user_id").(float64))
+		userID := uint(c.Locals("userID").(float64))
 
 		var body struct {
 			Amount int64 `json:"amount"`
@@ -107,7 +107,7 @@ func Withdraw(walletService *services.WalletService) fiber.Handler {
 			utils.CodeWalletWithdrawSuccess,
 			"Withdraw successful",
 			fiber.Map{
-				"userId": userID,
+				"userID": userID,
 				"amount": body.Amount,
 			},
 		)
@@ -118,10 +118,10 @@ func Withdraw(walletService *services.WalletService) fiber.Handler {
 // İki kullanıcı arasında para transferi yapar
 func Transfer(walletService *services.WalletService, db any) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		fromUserID := uint(c.Locals("user_id").(float64))
+		fromUserID := uint(c.Locals("userID").(float64))
 
 		var body struct {
-			ToUserID uint  `json:"to_user_id"`
+			ToUserID uint  `json:"to_userID"`
 			Amount   int64 `json:"amount"`
 		}
 		if err := c.BodyParser(&body); err != nil {

@@ -11,7 +11,7 @@ import (
 // GetTransactionHistory giriş yapan kullanıcının işlem geçmişini döndürür
 func GetTransactionHistory(transactionService *services.TransactionService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		userID := uint(c.Locals("user_id").(float64))
+		userID := uint(c.Locals("userID").(float64))
 
 		history, err := transactionService.GetHistory(userID)
 		if err != nil {
@@ -28,7 +28,7 @@ func GetTransactionHistory(transactionService *services.TransactionService) fibe
 			utils.CodeTxHistoryFetched,
 			"Transaction history fetched",
 			fiber.Map{
-				"userId":       userID,
+				"userID":       userID,
 				"transactions": history,
 			},
 		)

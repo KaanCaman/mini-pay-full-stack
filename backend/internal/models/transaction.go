@@ -1,17 +1,13 @@
 package models
 
-import (
-	"gorm.io/gorm"
-)
-
 // Transaction represents a single wallet operation
 // Transaction, tek bir cüzdan işlemini temsil eder
 type Transaction struct {
-	gorm.Model
+	MyModel
 
 	// UserID is the owner of the wallet performing the operation
 	// UserID, işlemi yapan cüzdan sahibini belirtir
-	UserID uint `json:"user_id"`
+	UserID uint `json:"userID" gorm:"column:userID"`
 
 	// Type indicates transaction category: deposit, withdraw, transfer
 	// Type işlemin türünü belirtir: deposit, withdraw, transfer
@@ -23,9 +19,9 @@ type Transaction struct {
 
 	// TargetUserID is used only for transfer operations
 	// TargetUserID sadece transfer işlemlerinde kullanılır
-	TargetUserID *uint `json:"target_user_id,omitempty"`
+	TargetUserID *uint `json:"targetUserID,omitempty" gorm:"column:targetUserID"`
 
 	// BalanceAfter represents user's balance after the transaction
 	// BalanceAfter, işlem sonrası kullanıcının bakiyesini gösterir
-	BalanceAfter int64 `json:"balance_after"`
+	BalanceAfter int64 `json:"balanceAfter"`
 }

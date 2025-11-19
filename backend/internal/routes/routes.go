@@ -34,10 +34,10 @@ func RegisterRoutes(app *fiber.App, db database.DB, log logger.Logger) {
 
 		// Access logged user id
 		// Giriş yapan kullanıcının ID’sine eriş
-		userID := c.Locals("user_id")
+		userID := c.Locals("userID")
 
 		return utils.Success(c, fiber.StatusOK, utils.CodeOK, "Token is valid", fiber.Map{
-			"userId": userID,
+			"userID": userID,
 		})
 	})
 

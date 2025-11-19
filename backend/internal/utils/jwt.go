@@ -23,7 +23,7 @@ func GenerateToken(userID uint) (string, error) {
 	claims := jwt.MapClaims{
 		// Store user ID inside the token
 		// Kullanıcı ID’sini token içine koy
-		"user_id": userID,
+		"userID": userID,
 
 		// Set expiration time (14 minute from now)
 		// Token’ın geçerlilik süresi (şu andan itibaren 14 dakika)
