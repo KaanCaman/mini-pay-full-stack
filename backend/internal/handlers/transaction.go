@@ -11,16 +11,26 @@ import (
 // GetTransactionHistory giriş yapan kullanıcının işlem geçmişini döndürür
 func GetTransactionHistory(transactionService *services.TransactionService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		userID := uint(c.Locals("user_id").(float64))
+		userID := uint(c.Locals("userID").(float64))
 
 		history, err := transactionService.GetHistory(userID)
 		if err != nil {
-			return utils.InternalError(c, "Failed to retrieve transaction history")
+			return utils.InternalError(
+				c,
+				utils.CodeInternalErr,
+				"Failed to retrieve transaction history",
+			)
 		}
 
-		return c.JSON(fiber.Map{
-			"user_id":      userID,
-			"transactions": history,
-		})
+		return utils.Success(
+			c,
+			fiber.StatusOK,
+			utils.CodeTxHistoryFetched,
+			"Transaction history fetched",
+			fiber.Map{
+				"userID":       userID,
+				"transactions": history,
+			},
+		)
 	}
 }

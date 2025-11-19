@@ -55,14 +55,14 @@ func (s *AuthService) Register(email, password string) error {
 
 	if err := s.walletRepo.Create(&wallet); err != nil {
 		s.log.Error("Wallet creation failed", map[string]interface{}{
-			"user_id": user.ID,
+			"userID": user.ID,
 		})
 		// optional: rollback user creation
 		return err
 	}
 
 	s.log.Info("User and wallet created successfully", map[string]interface{}{
-		"user_id":   user.ID,
+		"userID":   user.ID,
 		"wallet_id": wallet.ID,
 		"balance":   wallet.Balance,
 	})

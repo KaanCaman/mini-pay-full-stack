@@ -8,6 +8,7 @@
 *.so
 *.dylib
 *.db
+*.db*
 
 # Test binary, built with `go test -c`
 *.test
@@ -34,3 +35,4 @@ go.work.sum
 
 # env files
 *.env
+*.DS_Store

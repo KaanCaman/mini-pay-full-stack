@@ -21,7 +21,7 @@ func NewWalletRepository(db database.DB) *WalletRepository {
 // FindByUserID belirtilen kullanıcıya ait cüzdanı getirir
 func (r *WalletRepository) FindByUserID(userID uint) (*models.Wallet, error) {
 	var wallet models.Wallet
-	if err := r.db.GetDB().Where("user_id = ?", userID).First(&wallet).Error; err != nil {
+	if err := r.db.GetDB().Where("userID = ?", userID).First(&wallet).Error; err != nil {
 		return nil, err
 	}
 	return &wallet, nil

@@ -21,7 +21,7 @@ func AuthMiddleware() fiber.Handler {
 		// Must be: "Bearer <token>"
 		// Format: "Bearer <token>" olmalı
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			return utils.UnauthorizedError(c, "Missing or invalid token")
+			return utils.UnauthorizedError(c, utils.CodeAuthTokenMissing, "Missing or invalid token")
 		}
 
 		// Extract token part
@@ -34,17 +34,17 @@ func AuthMiddleware() fiber.Handler {
 			return utils.JwtSecret, nil
 		})
 		if err != nil || !token.Valid {
-			return utils.UnauthorizedError(c, "Invalid token")
+			return utils.UnauthorizedError(c, utils.CodeAuthTokenInvalid, "Invalid token")
 		}
 
-		// Extract user_id from claims
-		// Token claim’lerinden user_id’yi al
+		// Extract userID from claims
+		// Token claim’lerinden userID’yi al
 		claims := token.Claims.(jwt.MapClaims)
-		userID := claims["user_id"]
+		userID := claims["userID"]
 
-		// Store user_id for downstream handlers
-		// Handler’ların erişebilmesi için user_id’yi sakla
-		c.Locals("user_id", userID)
+		// Store userID for downstream handlers
+		// Handler’ların erişebilmesi için userID’yi sakla
+		c.Locals("userID", userID)
 
 		// Continue to next handler
 		// Sonraki handler’a geç

@@ -7,6 +7,7 @@ import (
 	"mini-pay-backend/internal/middleware"
 	"mini-pay-backend/internal/repositories"
 	"mini-pay-backend/internal/services"
+	"mini-pay-backend/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -33,11 +34,10 @@ func RegisterRoutes(app *fiber.App, db database.DB, log logger.Logger) {
 
 		// Access logged user id
 		// Giriş yapan kullanıcının ID’sine eriş
-		userID := c.Locals("user_id")
+		userID := c.Locals("userID")
 
-		return c.JSON(fiber.Map{
-			"message": "Authenticated ✅",
-			"user_id": userID,
+		return utils.Success(c, fiber.StatusOK, utils.CodeOK, "Token is valid", fiber.Map{
+			"userID": userID,
 		})
 	})
 
@@ -50,9 +50,12 @@ func RegisterRoutes(app *fiber.App, db database.DB, log logger.Logger) {
 
 	// Test endpoint
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"message": "Mini Pay API is running 🚀",
-			"status":  "ok",
-		})
+		return utils.Success(
+			c,
+			fiber.StatusOK,
+			utils.CodeOK,
+			"Mini Pay Backend is running!",
+			nil,
+		)
 	})
 }
