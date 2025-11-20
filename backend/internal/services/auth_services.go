@@ -62,7 +62,7 @@ func (s *AuthService) Register(email, password string) error {
 	}
 
 	s.log.Info("User and wallet created successfully", map[string]interface{}{
-		"userID":   user.ID,
+		"userID":    user.ID,
 		"wallet_id": wallet.ID,
 		"balance":   wallet.Balance,
 	})
@@ -72,19 +72,19 @@ func (s *AuthService) Register(email, password string) error {
 
 // Login verifies user credentials and returns JWT token
 // Login kullanıcı bilgilerini doğrular ve JWT token döner
-func (s *AuthService) Login(email, password string) (string, error) {
+func (s *AuthService) Login(email, password string) (string, int, error) {
 
 	// Fetch user by email from database
 	// Kullanıcıyı email üzerinden veritabanından al
 	user, err := s.userRepo.FindByEmail(email)
 	if err != nil {
-		return "", fiber.ErrUnauthorized
+		return "", -1, fiber.ErrUnauthorized
 	}
 
 	// Compare stored hash with given password
 	// Saklanan hash ile kullanıcı giriş şifresini karşılaştır
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		return "", fiber.ErrUnauthorized
+		return "", -1, fiber.ErrUnauthorized
 	}
 
 	// Create JWT token tied to user ID
@@ -92,7 +92,7 @@ func (s *AuthService) Login(email, password string) (string, error) {
 	token, err := utils.GenerateToken(user.ID)
 	if err != nil {
 		s.log.Error("Token generation failed")
-		return "", err
+		return "", -1, err
 	}
 
 	s.log.Info("User logged in", map[string]interface{}{
@@ -100,5 +100,5 @@ func (s *AuthService) Login(email, password string) (string, error) {
 		"id":    user.ID,
 	})
 
-	return token, nil
+	return token, int(user.ID), nil
 }

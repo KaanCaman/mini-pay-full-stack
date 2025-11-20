@@ -45,13 +45,14 @@ func Login(authService *services.AuthService) fiber.Handler {
 			return utils.BadRequestError(c, utils.CodeValidationErr, "Invalid request body")
 		}
 
-		token, err := authService.Login(body.Email, body.Password)
+		token, userID, err := authService.Login(body.Email, body.Password)
 		if err != nil {
 			return utils.UnauthorizedError(c, utils.CodeAuthInvalidCreds, "Invalid email or password")
 		}
 
 		return utils.Success(c, fiber.StatusOK, utils.CodeOK, "Login successful", fiber.Map{
-			"token": token,
+			"token":  token,
+			"userID": userID,
 		})
 	}
 }
