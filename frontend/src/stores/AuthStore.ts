@@ -106,6 +106,8 @@ export class AuthStore {
     });
 
     try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // call login API endpoint
       // giriş API endpoint'ini çağır
       const res: ApiResponse<LoginData> = await this.api.login(email, password);
@@ -148,6 +150,7 @@ export class AuthStore {
       const message = errorData?.message || "Login failed.";
       const code = errorData?.code || null;
 
+      // TODO : remove console log in production
       console.log("❌ Login error:", {
         message,
         code,
@@ -185,6 +188,7 @@ export class AuthStore {
     });
 
     try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       // call register API endpoint
       // kayıt API endpoint'ini çağır
       const res: ApiResponse<RegisterData> = await this.api.register(

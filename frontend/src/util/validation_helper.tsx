@@ -2,7 +2,7 @@ export default class ValidationHelper {
   // simple email format validation using regex
   // regex kullanarak basit email format doğrulaması
   static isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g;
     return emailRegex.test(email);
   }
 

@@ -22,6 +22,7 @@ import SlidingTab from "../../components/auth/SlidingTab";
 import { EnvelopeSimpleIcon, LockSimpleIcon } from "phosphor-react-native";
 import { useToast } from "../../providers/ToastProvider";
 import { ERROR_CODE_MAP } from "../../i18n/error_map";
+import ValidationHelper from "../../util/validation_helper";
 
 const AuthScreen = observer(() => {
   const { colors } = useTheme();
@@ -67,7 +68,7 @@ const AuthScreen = observer(() => {
 
       // show error toast
       // hata toast'unu göster
-      toastError(msg);
+      // toastError(msg);
     }
   }, [authStore.error, authStore.errorCode, t, toastError]);
 
@@ -83,6 +84,17 @@ const AuthScreen = observer(() => {
     // gerekli alanları doğrula
     if (!email.trim() || !password.trim()) {
       toastError(t("auth.register_fill_fields"));
+      return;
+    }
+
+    // validate email format
+    if (!ValidationHelper.isValidEmail(email.trim())) {
+      toastError(t("auth.invalid_email"));
+      return;
+    }
+
+    if (password.length < 6) {
+      toastError(t("auth.password_min_length"));
       return;
     }
 
@@ -110,18 +122,17 @@ const AuthScreen = observer(() => {
       // KAYIT MODU
       // simulate processing time for better UX
       // daha iyi UX için işlem süresi simüle et
-      await Promise.all([
-        new Promise((resolve) => setTimeout(resolve, 2000)),
-        authStore.register(email.toLowerCase().trim(), password),
-      ]);
+      await authStore.register(email.toLowerCase().trim(), password);
 
+      // show success toast
+      // başarı toast'unu göster
       // after successful registration, switch to login tab
       // başarılı kayıt sonrası giriş tab'ına geç
       setTimeout(() => {
-        setMode(0);
         resetForm();
         success(t("auth.register_success"), t("auth.go_login"));
-      }, 400);
+        setMode(0);
+      }, 50);
     } catch (err) {
       // error already handled by store and useEffect
       // hata zaten store ve useEffect tarafından yönetildi
@@ -271,8 +282,6 @@ const AuthScreen = observer(() => {
 // React DevTools için görünen isim
 AuthScreen.displayName = "AuthScreen";
 
-export default AuthScreen;
-
 const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: 28,
@@ -285,3 +294,4 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
 });
+export default AuthScreen;

@@ -40,12 +40,22 @@ const ToastItem: React.FC<ToastItemProps> = ({
   onDismiss,
 }) => {
   const { colors } = useTheme();
+
+  // animated value for toast slide-in from top
+  // toast'un yukarıdan kayarak gelmesi için animasyon değeri
   const translateY = useRef(new Animated.Value(-100)).current;
+
+  // animated value for fade-in/fade-out effect
+  // görünme/kaybolma efekti için animasyon değeri
   const opacity = useRef(new Animated.Value(0)).current;
+
+  // animated value for progress bar countdown
+  // ilerleme çubuğu geri sayımı için animasyon değeri
   const progressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Enter animation
+    // enter animation: slide down and fade in
+    // giriş animasyonu: aşağı kaydır ve belir
     Animated.parallel([
       Animated.spring(translateY, {
         toValue: 0,
@@ -60,14 +70,16 @@ const ToastItem: React.FC<ToastItemProps> = ({
       }),
     ]).start();
 
-    // Progress bar animation
+    // progress bar animation: fill from 0% to 100%
+    // ilerleme çubuğu animasyonu: %0'dan %100'e doldur
     Animated.timing(progressAnim, {
       toValue: 1,
       duration: duration,
       useNativeDriver: false,
     }).start();
 
-    // Auto dismiss
+    // auto dismiss after duration ends
+    // süre dolunca otomatik kapat
     const timer = setTimeout(() => {
       dismiss();
     }, duration);
@@ -76,6 +88,8 @@ const ToastItem: React.FC<ToastItemProps> = ({
   }, []);
 
   const dismiss = () => {
+    // exit animation: slide up and fade out
+    // çıkış animasyonu: yukarı kaydır ve kaybol
     Animated.parallel([
       Animated.timing(translateY, {
         toValue: -100,
@@ -92,6 +106,8 @@ const ToastItem: React.FC<ToastItemProps> = ({
     });
   };
 
+  // get visual config (icon, colors) based on toast type
+  // toast tipine göre görsel yapılandırmayı (ikon, renkler) al
   const getConfig = () => {
     switch (type) {
       case "success":
@@ -122,6 +138,9 @@ const ToastItem: React.FC<ToastItemProps> = ({
   };
 
   const config = getConfig();
+
+  // interpolate progress bar width from 0% to 100%
+  // ilerleme çubuğu genişliğini %0'dan %100'e enterpolasyon yap
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["0%", "100%"],

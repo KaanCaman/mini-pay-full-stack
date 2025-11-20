@@ -30,6 +30,7 @@
     "forgotPassword": "Şifremi Unuttum?",
     "no_account": "Hesabınız yok mu?",
     "go_register": "Kayıt Ol",
+    "register_success": "Kayıt başarılı!",
     "register_fill_fields": "Lütfen tüm alanları doldurun",
     "register_password_mismatch": "Şifreler eşleşmiyor",
     "register_invalid_email": "Geçersiz e-posta adresi",
@@ -39,6 +40,8 @@
     "fill_fields": "Lütfen tüm alanları doldurun",
     "create_account": "Hesap Oluştur",
     "register_error": "Kayıt işleminde hata oluştu",
+    "invalid_email": "Geçersiz e-posta adresi",
+    "password_min_length": "Şifre en az 6 karakter olmalıdır",
     "login_error": "Giriş işleminde hata oluştu",
     "go_login": "Giriş Yap"
   },
