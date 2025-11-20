@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect } from "react";
-import { rootStore, RootStore } from "./RootStore";
+import { rootStore, RootStore } from "../stores/RootStore";
 
 // creates a React context to expose the RootStore to the component tree
 // component ağacına RootStore'u sağlayacak React context'i oluşturur

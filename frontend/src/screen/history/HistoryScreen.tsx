@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { useTheme } from "../../theme/ThemeProvider";
+import { useTheme } from "../../providers/ThemeProvider";
 import { useTranslation } from "react-i18next";
 
 export default function HistoryScreen() {

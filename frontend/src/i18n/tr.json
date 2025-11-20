@@ -2,6 +2,22 @@
   "app": {
     "name": "Mini Pay"
   },
+  "errors": {
+    "validation": "Geçersiz istek.",
+    "internal": "Sunucu hatası oluştu.",
+    "general": "Bir hata oluştu.",
+    "user_exists": "Bu e-posta ile kayıtlı bir kullanıcı zaten var.",
+    "invalid_credentials": "E-posta veya şifre hatalı.",
+    "token_missing": "Token bulunamadı.",
+    "token_invalid": "Token geçersiz.",
+    "unauthorized": "Oturumunuz sonlandı, lütfen tekrar giriş yapın.",
+    "wallet_not_found": "Cüzdan bulunamadı.",
+    "insufficient_funds": "Yetersiz bakiye.",
+    "invalid_amount": "Geçersiz tutar.",
+    "request_body_invalid": "Geçersiz istek formatı.",
+    "tx_history_failed": "İşlem geçmişi alınamadı."
+  },
+
   "auth": {
     "login": "Giriş Yap",
     "email_placeholder": "E-posta adresinizi girin",
@@ -16,14 +32,14 @@
     "go_register": "Kayıt Ol",
     "register_fill_fields": "Lütfen tüm alanları doldurun",
     "register_password_mismatch": "Şifreler eşleşmiyor",
-    "login_error": "Giriş işleminde bir hata oluştu",
-    "register_error": "Kayıt işleminde bir hata oluştu",
     "register_invalid_email": "Geçersiz e-posta adresi",
     "confirm_password": "Şifreyi Onayla",
     "confirm_password_placeholder": "Şifrenizi tekrar girin",
     "already_have_account": "Zaten hesabınız var mı?",
+    "fill_fields": "Lütfen tüm alanları doldurun",
     "create_account": "Hesap Oluştur",
-
+    "register_error": "Kayıt işleminde hata oluştu",
+    "login_error": "Giriş işleminde hata oluştu",
     "go_login": "Giriş Yap"
   },
   "home": {

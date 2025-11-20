@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
 import "./src/i18n";
-import { ThemeProvider } from "./src/theme/ThemeProvider";
+import { ThemeProvider } from "./src/providers/ThemeProvider";
 import RootNavigator from "./src/navigation/RootNavigator";
 import { StoreProvider } from "./src/stores";
+import { ToastProvider } from "./src/providers/ToastProvider";
 
 export default function App() {
   useEffect(() => {
@@ -10,9 +11,11 @@ export default function App() {
   }, []);
   return (
     <ThemeProvider>
-      <StoreProvider>
-        <RootNavigator />
-      </StoreProvider>
+      <ToastProvider>
+        <StoreProvider>
+          <RootNavigator />
+        </StoreProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

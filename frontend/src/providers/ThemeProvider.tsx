@@ -6,8 +6,8 @@ import React, {
   useEffect,
 } from "react";
 import { Appearance, useColorScheme } from "react-native";
-import { darkColors } from "./colors.dark";
-import { lightColors } from "./colors.light";
+import { darkColors } from "../theme/colors.dark";
+import { lightColors } from "../theme/colors.light";
 
 type ThemeMode = "light" | "dark";
 

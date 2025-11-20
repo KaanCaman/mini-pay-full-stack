@@ -1,6 +1,6 @@
 import { AuthStore } from "./AuthStore";
 
-import { setOnUnauthorized, apiService } from "../api/";
+import { apiService } from "../api/";
 
 // defines the RootStore which holds and initializes all other MobX stores
 // diğer tüm MobX store'larını tutan ve başlatan RootStore'u tanımlar
@@ -15,12 +15,6 @@ export class RootStore {
     // creates the authentication store and injects the API service dependency
     // authentication store'u oluşturur ve API servisini dependency olarak enjekte eder
     this.authStore = new AuthStore(apiService);
-
-    // attaches a global handler that runs when httpClient receives a 401 response
-    // httpClient 401 yanıt aldığında çalışacak global handler'ı bağlar
-    setOnUnauthorized(() => {
-      this.authStore.handleUnauthorized();
-    });
   }
 
   // hydrates all root-level stores during app startup

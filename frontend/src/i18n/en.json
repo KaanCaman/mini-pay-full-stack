@@ -2,6 +2,22 @@
   "app": {
     "name": "Mini Pay"
   },
+  "errors": {
+    "validation": "Invalid request.",
+    "internal": "Server error occurred.",
+    "general": "An error occurred.",
+    "user_exists": "A user with this email already exists.",
+    "invalid_credentials": "Incorrect email or password.",
+    "token_missing": "Token is missing.",
+    "token_invalid": "Token is invalid.",
+    "unauthorized": "Your session has expired, please log in again.",
+    "wallet_not_found": "Wallet not found.",
+    "insufficient_funds": "Insufficient funds.",
+    "invalid_amount": "Invalid amount.",
+    "request_body_invalid": "Invalid request format.",
+    "tx_history_failed": "Failed to fetch transaction history."
+  },
+
   "auth": {
     "login": "Login",
     "register": "Create Account",
@@ -22,7 +38,10 @@
     "confirm_password_placeholder": "Re-enter your password",
     "already_have_account": "Already have an account?",
     "go_login": "Login here",
-    "creeate_account": "Create Account"
+    "creeate_account": "Create Account",
+    "fill_fields": "Please fill in all fields",
+    "create_account": "Create Account",
+    "login_error": "An error occurred during login"
   },
   "home": {
     "hello": "Hello",

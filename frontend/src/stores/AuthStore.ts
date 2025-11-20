@@ -1,216 +1,275 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import * as SecureStore from "expo-secure-store";
-import { IApiService, LoginResponse } from "../api/IApiService";
-import { setAccessToken } from "../api/httpClient";
+import { IApiService } from "../api/service/IApiService";
+import { ApiResponse, LoginData, RegisterData } from "../api/service/types";
+import { httpClient } from "../api/";
 
-// defines storage keys for persistence to keep naming consistent and avoid typos
-// veri saklama anahtarlarını tanımlar; hem düzen hem de yazım hatalarını engellemek için kullanılır
+// secure storage keys for token persistence
+// token kalıcılığı için güvenli depolama anahtarları
 const TOKEN_KEY = "mp_access_token";
 const USER_ID_KEY = "mp_user_id";
 
-// defines the authentication store that handles login state, token, userId, and session management
-// login durumu, token, userId ve oturum yönetimini ele alan authentication store'unu tanımlar
 export class AuthStore {
-  // holds injected API service instance used for backend communication
-  // backend ile iletişim için kullanılan API servis instance'ını saklar
+  // injected API service for backend communication
+  // backend iletişimi için enjekte edilen API servisi
   api: IApiService;
 
-  // stores the JWT token in memory
-  // JWT token'ı hafızada saklar
+  // JWT access token stored in memory
+  // hafızada saklanan JWT erişim token'ı
   token: string | null = null;
 
-  // stores numeric user ID returned by backend
-  // backend tarafından dönen kullanıcı ID'sini saklar
+  // authenticated user ID
+  // kimliği doğrulanmış kullanıcı ID'si
   userId: number | null = null;
 
-  // indicates whether we restored data from storage
-  // storage'dan verilerin yüklenip yüklenmediğini gösterir
-  hydrated = false;
-
-  // indicates loading state during login calls
-  // login çağrıları sırasında yükleme durumunu belirtir
+  // loading state for UI feedback
+  // UI geri bildirimi için yükleme durumu
   loading = false;
 
-  // holds last error message for UI display
-  // UI’da gösterilecek son hata mesajını saklar
+  // hydration completed flag
+  // hidrasyon tamamlanma bayrağı
+  hydrated = false;
+
+  // last error message from API
+  // API'den gelen son hata mesajı
   error: string | null = null;
 
-  // constructor connects API service and makes entire class observable
-  // constructor, API servisi bağlar ve tüm sınıfı observable hale getirir
+  // last error code from API
+  // API'den gelen son hata kodu
+  errorCode: string | null = null;
+
   constructor(api: IApiService) {
     this.api = api;
-
-    // makes all fields observable and all methods auto-bound
-    // tüm alanları observable ve tüm metotları otomatik bağlanmış hale getirir
     makeAutoObservable(this);
+
+    // register 401 unauthorized handler
+    // 401 yetkisiz durumu işleyicisini kaydet
+    httpClient.setOnUnauthorized(() => this.handleUnauthorized());
   }
 
-  // sets error message for UI and logging
-  // UI ve loglama için error mesajını ayarlar
-  setError(message: string | null) {
-    runInAction(() => {
-      this.error = message;
-    });
-  }
-
-  // computed property returning true if user is logged in (has token)
-  // kullanıcı giriş yapmış mı (token var mı) kontrol eden computed property
+  // computed: check if user is authenticated
+  // hesaplanmış: kullanıcının kimliği doğrulanmış mı kontrol et
   get isAuthenticated() {
     return !!this.token;
   }
 
-  // restores token + userId from SecureStore when app boots
-  // uygulama açıldığında SecureStore'dan token + userId değerlerini geri yükler
+  // restore session from secure storage on app start
+  // uygulama başlangıcında oturumu güvenli depodan geri yükle
   hydrate = async () => {
     try {
-      // loads token and userId in parallel for better performance
-      // daha iyi performans için token ve userId'yi paralel olarak yükler
+      // load token and userId in parallel for performance
+      // performans için token ve userId'yi paralel yükle
       const [storedToken, storedUserId] = await Promise.all([
         SecureStore.getItemAsync(TOKEN_KEY),
         SecureStore.getItemAsync(USER_ID_KEY),
       ]);
-      console.log("authstorees : ", storedToken, storedUserId);
 
-      const isAuth = await this.api.isAuthenticated(storedToken || "");
+      // if no credentials found, skip validation
+      // kimlik bilgisi bulunamazsa doğrulamayı atla
+      if (!storedToken || !storedUserId) {
+        throw new Error("No stored credentials");
+      }
 
-      // injects token into global http client so API calls authenticate correctly
-      // token'ı global http client'a enjekte eder, böylece API çağrıları doğru şekilde yetkilendirilir
-      if (this.isAuthenticated) setAccessToken(storedToken);
+      // verify token is still valid with backend
+      // token'ın backend ile hala geçerli olduğunu doğrula
+      const isValid = await this.api.isAuthenticated(storedToken);
 
-      // safely updates observable fields inside MobX action
-      // observable alanları güvenli şekilde güncellemek için MobX action kullanılır
       runInAction(() => {
-        this.token = isAuth ? storedToken : null;
-        this.userId = isAuth && storedUserId ? Number(storedUserId) : null;
+        this.token = isValid ? storedToken : null;
+        this.userId = isValid ? Number(storedUserId) : null;
         this.hydrated = true;
       });
-    } catch (e) {
-      // ensures hydration completes even if something goes wrong
-      // bir hata olsa bile hydration sürecinin tamamlanmasını garanti eder
+
+      // inject valid token into HTTP client
+      // geçerli token'ı HTTP istemcisine enjekte et
+      if (isValid) {
+        httpClient.setAccessToken(storedToken);
+      }
+    } catch {
+      // mark hydration as complete even on error
+      // hata durumunda bile hidrasyonu tamamlanmış olarak işaretle
       runInAction(() => {
         this.hydrated = true;
       });
     }
   };
 
-  // performs login by calling API service and persists token + userId
-  // API servisini çağırarak login işlemi yapar ve token + userId'yi saklar
+  // authenticate user with email and password
+  // kullanıcıyı email ve şifre ile kimlik doğrula
   login = async (email: string, password: string) => {
-    // starts loading state so UI can show spinner
-    // UI gösterimi için loading durumunu başlatır
-    this.loading = true;
-    this.setError(null);
+    // set loading state and clear previous errors
+    // yükleme durumunu ayarla ve önceki hataları temizle
+    runInAction(() => {
+      this.loading = true;
+      this.error = null;
+      this.errorCode = null;
+    });
 
     try {
-      // calls API and receives typed login response
-      // API'yi çağırır ve tip güvenli login yanıtını alır
-      const result: LoginResponse = await this.api.login(email, password);
+      // call login API endpoint
+      // giriş API endpoint'ini çağır
+      const res: ApiResponse<LoginData> = await this.api.login(email, password);
 
-      // updates observable fields with login data
-      // login'den dönen verilerle observable alanları günceller
+      // handle unsuccessful response
+      // başarısız yanıtı işle
+      if (!res.success) {
+        runInAction(() => {
+          this.error = res.message;
+          this.errorCode = res.code || null;
+        });
+        throw new Error(res.message);
+      }
+
+      // store token and userId in memory
+      // token ve userId'yi hafızada sakla
       runInAction(() => {
-        this.token = result.token;
-        this.userId = result.user_id;
+        this.token = res.data?.token ?? null;
+        this.userId = res.data?.userID ?? null;
       });
 
-      // injects token into axios client
-      // token'ı axios client'a enjekte eder
-      setAccessToken(result.token);
+      // validate that we received valid credentials
+      // geçerli kimlik bilgileri aldığımızı doğrula
+      if (!this.token || !this.userId) {
+        throw new Error("Invalid credentials received from server");
+      }
 
-      // persists token & userId into secure device storage
-      // token ve userId'yi cihazın güvenli depolamasına yazar
-      await Promise.all([
-        SecureStore.setItemAsync(TOKEN_KEY, result.token),
-        SecureStore.setItemAsync(USER_ID_KEY, String(result.user_id)),
-      ]);
+      // inject token into HTTP client for subsequent requests
+      // sonraki istekler için token'ı HTTP istemcisine enjekte et
+      httpClient.setAccessToken(this.token);
+
+      // persist credentials to secure storage
+      // kimlik bilgilerini güvenli depoya kaydet
+      await SecureStore.setItemAsync(TOKEN_KEY, this.token);
+      await SecureStore.setItemAsync(USER_ID_KEY, String(this.userId));
     } catch (err: any) {
-      // extracts backend error message if exists, fallback to generic
-      // backend error mesajı varsa alır, yoksa generic hata döner
-      const message =
-        err?.response?.data?.message ||
-        "An unexpected error occurred during login.C";
-      this.setError(message);
+      // extract error details from response
+      // yanıttan hata detaylarını çıkar
+      const errorData = err?.response?.data;
+      const message = errorData?.message || "Login failed.";
+      const code = errorData?.code || null;
+
+      console.log("❌ Login error:", {
+        message,
+        code,
+        status: err?.response?.status,
+      });
+
+      // update error state
+      // hata durumunu güncelle
+      runInAction(() => {
+        this.error = message;
+        this.errorCode = code;
+      });
+
+      // re-throw for UI error handling
+      // UI hata işleme için tekrar fırlat
       throw err;
     } finally {
-      // stops loading state
-      // loading durumunu sonlandırır
+      // always clear loading state
+      // her zaman yükleme durumunu temizle
       runInAction(() => {
         this.loading = false;
       });
     }
   };
 
-  // handles user registration, saves token and user ID, and updates reactive state
-  // kullanıcı kayıt işlemini yönetir, token ve user ID'yi kaydeder, reactive state'i günceller
+  // create new user account
+  // yeni kullanıcı hesabı oluştur
   register = async (email: string, password: string) => {
-    // marks the store as loading, so UI can show a spinner
-    // UI'nin yükleme durumunu gösterebilmesi için loading true yapılır
-    this.loading = true;
-    this.setError(null);
+    // set loading state and clear previous errors
+    // yükleme durumunu ayarla ve önceki hataları temizle
+    runInAction(() => {
+      this.loading = true;
+      this.error = null;
+      this.errorCode = null;
+    });
 
     try {
-      // sends register request to backend via API service
-      // API servisi üzerinden backend'e kayıt isteği gönderilir
-      const result = await this.api.register(email, password);
+      // call register API endpoint
+      // kayıt API endpoint'ini çağır
+      const res: ApiResponse<RegisterData> = await this.api.register(
+        email,
+        password
+      );
 
-      // safely updates MobX state inside an action
-      // MobX stateini güvenli şekilde güncellemek için runInAction kullanılır
-      runInAction(() => {
-        this.token = result.token;
-        this.userId = result.user_id;
+      // handle unsuccessful response
+      // başarısız yanıtı işle
+      if (!res.success) {
+        runInAction(() => {
+          this.error = res.message;
+          this.errorCode = res.code || null;
+        });
+        throw new Error(res.message);
+      }
+
+      // registration successful - no auto-login, just return success
+      // kayıt başarılı - otomatik giriş yok, sadece başarı dön
+      console.log("✅ Registration successful - user should login manually");
+    } catch (err: any) {
+      // extract error details from response
+      // yanıttan hata detaylarını çıkar
+      const errorData = err?.response?.data;
+      const message = errorData?.message || "Registration failed.";
+      const code = errorData?.code || null;
+
+      console.log("❌ Register error:", {
+        message,
+        code,
+        status: err?.response?.status,
       });
 
-      // injects token into axios interceptor for authenticated requests
-      // doğrulanmış istekler için token'ı axios interceptor'a işler
-      setAccessToken(result.token);
+      // update error state
+      // hata durumunu güncelle
+      runInAction(() => {
+        this.error = message;
+        this.errorCode = code;
+      });
 
-      // persists auth data securely using expo-secure-store
-      // kimlik bilgilerini güvenli biçimde cihazda saklar
-      await Promise.all([
-        SecureStore.setItemAsync(TOKEN_KEY, result.token),
-        SecureStore.setItemAsync(USER_ID_KEY, String(result.user_id)),
-      ]);
-    } catch (err: any) {
-      // extracts backend error message if exists, fallback to generic
-      // backend error mesajı varsa alır, yoksa generic hata döner
-      const message =
-        err?.response?.data?.message ||
-        "An unexpected error occurred during registration.";
-      this.setError(message);
+      // re-throw for UI error handling
+      // UI hata işleme için tekrar fırlat
       throw err;
     } finally {
-      // resets loading state once operation is complete
-      // işlem tamamlandığında loading state'i false yapılır
+      // always clear loading state
+      // her zaman yükleme durumunu temizle
       runInAction(() => {
         this.loading = false;
       });
     }
   };
 
-  // logs out user by clearing memory & secure storage
-  // kullanıcıyı çıkış yaptırır: memory ve secure storage temizlenir
+  // clear session and remove credentials
+  // oturumu temizle ve kimlik bilgilerini kaldır
   logout = async () => {
-    // wipes in-memory session state
-    // hafızadaki oturum bilgilerini siler
+    // clear in-memory state
+    // hafızadaki durumu temizle
     runInAction(() => {
       this.token = null;
       this.userId = null;
     });
 
-    // removes token from axios client so no Auth header is sent
-    // axios client'tan token'ı siler, artık Auth header gönderilmez
-    setAccessToken(null);
+    // remove token from HTTP client
+    // HTTP istemcisinden token'ı kaldır
+    httpClient.setAccessToken(null);
 
-    // clears persisted values
-    // saklanan token ve userId değerlerini temizler
+    // remove credentials from secure storage
+    // güvenli depodan kimlik bilgilerini kaldır
     await Promise.all([
       SecureStore.deleteItemAsync(TOKEN_KEY),
       SecureStore.deleteItemAsync(USER_ID_KEY),
     ]);
   };
 
-  // handles unauthorized responses (401) triggered from httpClient
-  // httpClient'tan tetiklenen 401 yetkisiz erişim durumlarını ele alır
+  // clear current error state
+  // mevcut hata durumunu temizle
+  clearError() {
+    runInAction(() => {
+      this.error = null;
+      this.errorCode = null;
+    });
+  }
+
+  // handle 401 unauthorized response from API
+  // API'den gelen 401 yetkisiz yanıtını işle
   handleUnauthorized = () => {
     this.logout();
   };

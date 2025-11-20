@@ -10,7 +10,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { EnvelopeSimpleIcon, LockSimpleIcon } from "phosphor-react-native";
 import { useStores } from "../../stores";
-import { useTheme } from "../../theme/ThemeProvider";
+import { useTheme } from "../../providers/ThemeProvider";
 import AuthHeader from "../../components/auth/AuthHeader";
 import Input from "../../components/input/Input";
 import PasswordInput from "../../components/input/PasswordInput";
@@ -37,7 +37,6 @@ export default function RegisterScreen({ navigation }: Props) {
   useEffect(() => {
     console.log(authStore.error);
     if (authStore.error) {
-
       setErrorMessage(authStore.error);
     }
   }, [authStore.error]);

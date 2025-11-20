@@ -8,13 +8,13 @@ import {
   ViewStyle,
   StyleProp,
 } from "react-native";
-import { useTheme } from "../../theme/ThemeProvider";
+import { useTheme } from "../../providers/ThemeProvider";
 
 interface InputProps extends TextInputProps {
   icon?: React.ReactNode;
   errorMessage?: string | null;
   containerStyle?: StyleProp<ViewStyle>;
-  renderRightComponent?: () => React.ReactNode; // ⭐ YENİ
+  renderRightComponent?: () => React.ReactNode;
 }
 
 export default function Input({

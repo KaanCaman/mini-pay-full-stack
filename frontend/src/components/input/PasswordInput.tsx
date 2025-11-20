@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import Input from "./Input";
-import { useTheme } from "../../theme/ThemeProvider";
+import { useTheme } from "../../providers/ThemeProvider";
 import { EyeIcon, EyeSlashIcon } from "phosphor-react-native";
 
 interface PasswordInputProps {
@@ -10,6 +10,7 @@ interface PasswordInputProps {
   placeholder?: string;
   errorMessage?: string | null;
   icon?: React.ReactNode;
+  editable?: boolean;
 }
 
 export default function PasswordInput({
@@ -18,6 +19,7 @@ export default function PasswordInput({
   placeholder,
   errorMessage,
   icon,
+  editable,
 }: PasswordInputProps) {
   const { colors } = useTheme();
   const [show, setShow] = useState(false);
@@ -30,12 +32,13 @@ export default function PasswordInput({
       secureTextEntry={!show}
       icon={icon}
       errorMessage={errorMessage}
+      editable={editable}
       // custom right element (eye icon)
       // özel sağ ikon alanı
       style={{ paddingRight: 40 }} // right icon için boşluk
       renderRightComponent={() => (
         <TouchableOpacity
-          onPress={() => setShow(!show)}
+          onPress={() => setShow((prev) => !prev)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           {show ? (

@@ -14,8 +14,16 @@ export const lightColors = {
   border: "#D7DDD7",
   accent: {
     primary: "#019C55",
+    secondary: "#028047",
     glow: "rgba(1, 156, 85, 0.25)",
+  },
+  input: {
+    background: "#F8FAF8",
+    border: "#E1E7E2",
+    focused: "#019C55",
   },
   success: "#2ECC71",
   error: "#E53935",
+  warning: "#FF9800",
+  info: "#29B6F6",
 };

@@ -8,7 +8,7 @@ import {
   Platform,
 } from "react-native";
 import { BlurView } from "@react-native-community/blur";
-import { useTheme } from "../../theme/ThemeProvider";
+import { useTheme } from "../../providers/ThemeProvider";
 
 interface Props {
   visible: boolean;
