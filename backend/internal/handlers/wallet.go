@@ -3,6 +3,7 @@ package handlers
 import (
 	"mini-pay-backend/internal/services"
 	"mini-pay-backend/internal/utils"
+	"mini-pay-backend/internal/validation"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -47,6 +48,9 @@ func Deposit(walletService *services.WalletService) fiber.Handler {
 		var body struct {
 			Amount int64 `json:"amount"`
 		}
+
+		// Parse request body
+		// İstek gövdesini ayrıştır
 		if err := c.BodyParser(&body); err != nil {
 			return utils.BadRequestError(
 				c,
@@ -55,14 +59,27 @@ func Deposit(walletService *services.WalletService) fiber.Handler {
 			)
 		}
 
+		// Validate that amount is > 0 before hitting the service layer.
+		// Service katmanına geçmeden önce amount değerinin > 0 olduğunu kontrol et.
+		if fe := validation.ValidatePositiveAmount("amount", body.Amount); fe != nil {
+			return utils.BadRequestError(
+				c,
+				utils.CodeValidationPositiveAmount,
+				validation.JoinErrors([]validation.FieldError{*fe}),
+			)
+		}
+
+		// Perform deposit operation
+		// Para yatırma işlemini gerçekleştir
 		if err := walletService.Deposit(userID, body.Amount); err != nil {
 			return utils.BadRequestError(
 				c,
-				utils.CodeWalletNotFound, // ya da başka spesifik kod açarsın
+				utils.CodeWalletNotFound,
 				err.Error(),
 			)
 		}
 
+		// success response
 		return utils.Success(
 			c,
 			fiber.StatusOK,
@@ -84,6 +101,9 @@ func Withdraw(walletService *services.WalletService) fiber.Handler {
 		var body struct {
 			Amount int64 `json:"amount"`
 		}
+
+		// Parse request body
+		// İstek gövdesini ayrıştır
 		if err := c.BodyParser(&body); err != nil {
 			return utils.BadRequestError(
 				c,
@@ -92,6 +112,18 @@ func Withdraw(walletService *services.WalletService) fiber.Handler {
 			)
 		}
 
+		// Validate that amount is > 0 before hitting the service layer.
+		// Service katmanına geçmeden önce amount değerinin > 0 olduğunu kontrol et.
+		if fe := validation.ValidatePositiveAmount("amount", body.Amount); fe != nil {
+			return utils.BadRequestError(
+				c,
+				utils.CodeValidationPositiveAmount,
+				validation.JoinErrors([]validation.FieldError{*fe}),
+			)
+		}
+
+		// Perform withdraw operation
+		// Para çekme işlemini gerçekleştir
 		if err := walletService.Withdraw(userID, body.Amount); err != nil {
 			code := utils.CodeWalletInsufficientFunds
 			if err.Error() != "insufficient funds" {
@@ -101,6 +133,7 @@ func Withdraw(walletService *services.WalletService) fiber.Handler {
 			return utils.BadRequestError(c, code, err.Error())
 		}
 
+		// success response
 		return utils.Success(
 			c,
 			fiber.StatusOK,
@@ -124,6 +157,9 @@ func Transfer(walletService *services.WalletService, db any) fiber.Handler {
 			ToUserID uint  `json:"to_userID"`
 			Amount   int64 `json:"amount"`
 		}
+
+		// Parse request body
+		// İstek gövdesini ayrıştır
 		if err := c.BodyParser(&body); err != nil {
 			return utils.BadRequestError(
 				c,
@@ -132,6 +168,20 @@ func Transfer(walletService *services.WalletService, db any) fiber.Handler {
 			)
 		}
 
+		//  validate userID > 0
+		if fe := validation.ValidatePositiveUint("to_userID", body.ToUserID); fe != nil {
+			return utils.BadRequestError(c, utils.CodeValidationInvalidUserID, validation.JoinErrors([]validation.FieldError{*fe}))
+		}
+
+		// Validate that amount is > 0 before hitting the service layer.
+		// Service katmanına geçmeden önce amount değerinin > 0 olduğunu kontrol et.
+		if fe := validation.ValidatePositiveAmount("amount", body.Amount); fe != nil {
+			return utils.BadRequestError(c, utils.CodeValidationPositiveAmount, validation.JoinErrors([]validation.FieldError{*fe}))
+
+		}
+
+		// do transfer
+		// transferi yap
 		if err := walletService.Transfer(db.(*gorm.DB), fromUserID, body.ToUserID, body.Amount); err != nil {
 			code := utils.CodeWalletInsufficientFunds
 			if err.Error() != "insufficient funds" {

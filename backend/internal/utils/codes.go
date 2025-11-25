@@ -37,4 +37,18 @@ const (
 	// İşlem geçmişi ile ilgili
 	CodeTxHistoryFailed  = "TX_HISTORY_FAILED"
 	CodeTxHistoryFetched = "TX_HISTORY_FETCHED"
+
+	// Rate limiting
+	CodeRateLimitExceeded = "RATE_LIMIT_EXCEEDED"
+
+	// Content type
+	CodeUnsupportedContentType = "UNSUPPORTED_CONTENT_TYPE"
+
+	// Validation related
+	/// Validasyon ile ilgili
+	CodeValidationRequiredField = "VALIDATION_REQUIRED_FIELD"
+	CodeValidationInvalidEmail  = "VALIDATION_INVALID_EMAIL"
+	CodeValidationMinLength     = "VALIDATION_MIN_LENGTH"
+	CodeValidationPositiveAmount = "VALIDATION_POSITIVE_AMOUNT"
+	CodeValidationInvalidUserID = "VALIDATION_INVALID_USERID"
 )

@@ -8,6 +8,7 @@ import (
 	"mini-pay-backend/internal/repositories"
 	"mini-pay-backend/internal/services"
 	"mini-pay-backend/internal/utils"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -28,9 +29,19 @@ func RegisterRoutes(app *fiber.App, db database.DB, log logger.Logger) {
 
 	// Register routes
 	// Route’ları bağla
-	app.Post("/register", handlers.Register(authService))
-	app.Post("/login", handlers.Login(authService))
-	app.Get("/me", middleware.AuthMiddleware(), func(c *fiber.Ctx) error {
+
+	// Rate limit : max 3 req per 10 minutes /register
+	// Register route’una 10 dakikada en fazla 3 istek izni ver
+	app.Post("/register", middleware.RateLimiter(3, 10*time.Minute), handlers.Register(authService))
+
+	// Rate limit : max 5 req per minute /login
+	// Login route’una dakikada en fazla 5 istek izni ver
+	app.Post("/login", middleware.RateLimiter(5, time.Minute), handlers.Login(authService))
+
+	// Rate limit : max 5 req per minute /me
+	// /me route’una dakikada en fazla 5 istek izni ver
+	meGroup := app.Group("/me", middleware.AuthMiddleware(), middleware.RateLimiter(5, time.Minute))
+	meGroup.Get("/", func(c *fiber.Ctx) error {
 
 		// Access logged user id
 		// Giriş yapan kullanıcının ID’sine eriş
@@ -41,7 +52,14 @@ func RegisterRoutes(app *fiber.App, db database.DB, log logger.Logger) {
 		})
 	})
 
-	auth := app.Group("/wallet", middleware.AuthMiddleware())
+	// Wallet routes
+	// Cüzdan route’ları
+
+	// Protected by AuthMiddleware and RateLimiter (45 req/minute)
+	// AuthMiddleware ve RateLimiter (dakikada 45 istek) ile korunur
+	auth := app.Group("/wallet", middleware.AuthMiddleware(), middleware.RateLimiter(45, time.Minute))
+
+	// ballance, deposit, withdraw, transfer, history endpoints
 	auth.Get("/balance", handlers.GetBalance(walletService))
 	auth.Post("/deposit", handlers.Deposit(walletService))
 	auth.Post("/withdraw", handlers.Withdraw(walletService))
@@ -49,7 +67,7 @@ func RegisterRoutes(app *fiber.App, db database.DB, log logger.Logger) {
 	auth.Get("/history", handlers.GetTransactionHistory(transactionService))
 
 	// Test endpoint
-	app.Get("/", func(c *fiber.Ctx) error {
+	app.Get("/", middleware.RateLimiter(10, time.Minute), func(c *fiber.Ctx) error {
 		return utils.Success(
 			c,
 			fiber.StatusOK,
