@@ -59,7 +59,7 @@ func ValidateRequired(field, value string) *FieldError {
 	return nil
 }
 
-var emailRegex = regexp.MustCompile(`/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g`)
+var emailRegex = regexp.MustCompile(`^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$`)
 
 // ValidateEmail checks basic email format.
 // ValidateEmail temel email formatını kontrol eder.

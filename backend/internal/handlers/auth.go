@@ -30,28 +30,16 @@ func Register(authService *services.AuthService) fiber.Handler {
 		body.Email = sanitize.CleanEmail(body.Email)
 		body.Password = sanitize.CleanPassword(body.Password)
 
-		// Request Validation
-		// İstek Validasyonu
-		var vErr []validation.FieldError
-
 		// Validate email format
 		// Email formatını doğrula
 		if fe := validation.ValidateEmail("email", body.Email); fe != nil {
-			vErr = append(vErr, *fe)
+			return utils.BadRequestError(c, utils.CodeValidationInvalidEmail, validation.JoinErrors([]validation.FieldError{*fe}))
 		}
 
 		// Validate password length
 		// Parola uzunluğunu doğrula
 		if fe := validation.ValidateMinLen("password", body.Password, 6); fe != nil {
-			vErr = append(vErr, *fe)
-		}
-
-		// If there are validation errors, return bad request
-		// Eğer doğrulama hataları varsa, bad request döndür
-		if len(vErr) > 0 {
-			//  Combine all field errors into a single human-readable message.
-			//  Tüm alan hatalarını tek bir okunabilir mesajda birleştir.
-			return utils.BadRequestError(c, utils.CodeValidationErr, validation.JoinErrors(vErr))
+			return utils.BadRequestError(c, utils.CodeValidationMinLength, validation.JoinErrors([]validation.FieldError{*fe}))
 		}
 
 		// Register user
