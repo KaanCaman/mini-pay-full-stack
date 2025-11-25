@@ -43,4 +43,11 @@ const (
 
 	// Content type
 	CodeUnsupportedContentType = "UNSUPPORTED_CONTENT_TYPE"
+
+	// Validation related
+	/// Validasyon ile ilgili
+	CodeValidationRequiredField = "VALIDATION_REQUIRED_FIELD"
+	CodeValidationInvalidEmail  = "VALIDATION_INVALID_EMAIL"
+	CodeValidationMinLength     = "VALIDATION_MIN_LENGTH"
+	CodeValidationPositiveAmount = "VALIDATION_POSITIVE_AMOUNT"
 )
