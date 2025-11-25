@@ -50,4 +50,5 @@ const (
 	CodeValidationInvalidEmail  = "VALIDATION_INVALID_EMAIL"
 	CodeValidationMinLength     = "VALIDATION_MIN_LENGTH"
 	CodeValidationPositiveAmount = "VALIDATION_POSITIVE_AMOUNT"
+	CodeValidationInvalidUserID = "VALIDATION_INVALID_USERID"
 )

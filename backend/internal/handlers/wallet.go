@@ -64,7 +64,7 @@ func Deposit(walletService *services.WalletService) fiber.Handler {
 		if fe := validation.ValidatePositiveAmount("amount", body.Amount); fe != nil {
 			return utils.BadRequestError(
 				c,
-				utils.CodeValidationErr,
+				utils.CodeValidationPositiveAmount,
 				validation.JoinErrors([]validation.FieldError{*fe}),
 			)
 		}
@@ -117,7 +117,7 @@ func Withdraw(walletService *services.WalletService) fiber.Handler {
 		if fe := validation.ValidatePositiveAmount("amount", body.Amount); fe != nil {
 			return utils.BadRequestError(
 				c,
-				utils.CodeValidationErr,
+				utils.CodeValidationPositiveAmount,
 				validation.JoinErrors([]validation.FieldError{*fe}),
 			)
 		}
@@ -168,26 +168,16 @@ func Transfer(walletService *services.WalletService, db any) fiber.Handler {
 			)
 		}
 
-		// Validate target user and amount before calling service.
-		// Service'e gitmeden önce hedef kullanıcı ve amount değerlerini doğrula.
-		var vErrs []validation.FieldError
-
 		//  validate userID > 0
 		if fe := validation.ValidatePositiveUint("to_userID", body.ToUserID); fe != nil {
-			vErrs = append(vErrs, *fe)
+			return utils.BadRequestError(c, utils.CodeValidationInvalidUserID, validation.JoinErrors([]validation.FieldError{*fe}))
 		}
 
 		// Validate that amount is > 0 before hitting the service layer.
 		// Service katmanına geçmeden önce amount değerinin > 0 olduğunu kontrol et.
 		if fe := validation.ValidatePositiveAmount("amount", body.Amount); fe != nil {
-			vErrs = append(vErrs, *fe)
-		}
+			return utils.BadRequestError(c, utils.CodeValidationPositiveAmount, validation.JoinErrors([]validation.FieldError{*fe}))
 
-		// If there are validation errors, return bad request
-		// Eğer doğrulama hataları varsa, bad request döndür
-		if len(vErrs) > 0 {
-			msg := validation.JoinErrors(vErrs)
-			return utils.BadRequestError(c, utils.CodeValidationErr, msg)
 		}
 
 		// do transfer
