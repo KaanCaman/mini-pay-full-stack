@@ -78,3 +78,9 @@ func NotFoundError(c *fiber.Ctx, code, msg string) error {
 func InternalError(c *fiber.Ctx, code, msg string) error {
 	return Error(c, fiber.StatusInternalServerError, code, msg)
 }
+
+// TooManyRequestsError shortcut for 429
+// TooManyRequestsError 429 hataları için kısayol
+func TooManyRequestsError(c *fiber.Ctx, code, msg string) error {
+	return Error(c, fiber.StatusTooManyRequests, code, msg)
+}

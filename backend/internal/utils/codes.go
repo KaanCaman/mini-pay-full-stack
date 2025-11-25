@@ -37,4 +37,10 @@ const (
 	// İşlem geçmişi ile ilgili
 	CodeTxHistoryFailed  = "TX_HISTORY_FAILED"
 	CodeTxHistoryFetched = "TX_HISTORY_FETCHED"
+
+	// Rate limiting
+	CodeRateLimitExceeded = "RATE_LIMIT_EXCEEDED"
+
+	// Content type
+	CodeUnsupportedContentType = "UNSUPPORTED_CONTENT_TYPE"
 )
