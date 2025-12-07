@@ -1,17 +1,23 @@
 import { AxiosApiClient } from "./client/AxiosApiClient";
 import { MiniPayApiService } from "./service/MiniPayApiService";
 
-// Export a singleton instance to be used throughout the app
-// Uygulama genelinde kullanılacak tekil (singleton) bir örneği dışa aktarır
-export const httpClient = new AxiosApiClient();
-export const apiService = new MiniPayApiService(httpClient);
+// 1. Create Instances (Singleton)
+const apiClient = new AxiosApiClient();
+const apiService = new MiniPayApiService(apiClient);
 
-// re-exports all useful API-related modules for cleaner imports
-// daha temiz import yolları için API ile ilgili modüller tekrar dışa aktarılır
+// 2. Export Instances
+// Uygulamanın geri kalanı bu instance'ları kullanacak
+export { apiService, apiClient };
 
-export * from "./client/IApiClient";
-export * from "./client/AxiosApiClient";
+// 3. Export Types & Interfaces
+// Sadece gerekli olanları dışarı aktarıyoruz. 'export *' kullanmıyoruz.
+
+// Client Types
+export { IApiClient } from "./client/IApiClient";
+export { AxiosApiClient } from "./client/AxiosApiClient";
 export * from "./client/types";
-export * from "./service/IApiService";
-export * from "./service/MiniPayApiService";
+
+// Service Types
+export { IApiService } from "./service/IApiService";
+export { MiniPayApiService } from "./service/MiniPayApiService";
 export * from "./service/types";

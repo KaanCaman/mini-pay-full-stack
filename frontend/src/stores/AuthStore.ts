@@ -1,21 +1,21 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import * as SecureStore from "expo-secure-store";
 import { IApiService } from "../api/service/IApiService";
-import { ApiResponse, LoginData, RegisterData } from "../api/service/types";
-import { httpClient } from "../api/";
+import { apiClient } from "../api/index";
+import { AuthCredentials } from "../api/service/types";
 
-// secure storage keys for token persistence
-// token kalıcılığı için güvenli depolama anahtarları
+// Secure storage keys
+// Güvenli depolama anahtarları
 const TOKEN_KEY = "mp_access_token";
 const USER_ID_KEY = "mp_user_id";
 
 export class AuthStore {
-  // injected API service for backend communication
-  // backend iletişimi için enjekte edilen API servisi
-  api: IApiService;
+  // Service layer for business logic
+  // İş mantığı için servis katmanı
+  private api: IApiService;
 
-  // JWT access token stored in memory
-  // hafızada saklanan JWT erişim token'ı
+  // State variables
+  // Durum değişkenleri
   token: string | null = null;
 
   // authenticated user ID
@@ -34,138 +34,111 @@ export class AuthStore {
   // API'den gelen son hata mesajı
   error: string | null = null;
 
-  // last error code from API
-  // API'den gelen son hata kodu
+  // last error code from API (CRITICAL FOR I18N MAPPING)
+  // API'den gelen son hata kodu (I18N EŞLEŞTİRMESİ İÇİN KRİTİK)
   errorCode: string | null = null;
 
   constructor(api: IApiService) {
     this.api = api;
     makeAutoObservable(this);
-
-    // register 401 unauthorized handler
-    // 401 yetkisiz durumu işleyicisini kaydet
-    httpClient.setOnUnauthorized(() => this.handleUnauthorized());
   }
 
-  // computed: check if user is authenticated
-  // hesaplanmış: kullanıcının kimliği doğrulanmış mı kontrol et
+  // Computed: check if user is authenticated
+  // Hesaplanmış: kullanıcının kimliği doğrulanmış mı kontrol et
   get isAuthenticated() {
     return !!this.token;
   }
 
-  // restore session from secure storage on app start
-  // uygulama başlangıcında oturumu güvenli depodan geri yükle
+  // Restore session from secure storage on app start
+  // Uygulama başlangıcında oturumu güvenli depodan geri yükle
   hydrate = async () => {
     try {
-      // load token and userId in parallel for performance
-      // performans için token ve userId'yi paralel yükle
+      // Load token and userId
+      // Token ve userId'yi yükle
       const [storedToken, storedUserId] = await Promise.all([
         SecureStore.getItemAsync(TOKEN_KEY),
         SecureStore.getItemAsync(USER_ID_KEY),
       ]);
 
-      // if no credentials found, skip validation
-      // kimlik bilgisi bulunamazsa doğrulamayı atla
       if (!storedToken || !storedUserId) {
-        throw new Error("No stored credentials");
+        runInAction(() => {
+          this.hydrated = true;
+        });
+        return;
       }
 
-      // verify token is still valid with backend
-      // token'ın backend ile hala geçerli olduğunu doğrula
-      const isValid = await this.api.isAuthenticated(storedToken);
+      // 1. Set token to client FIRST so the checkToken request has headers
+      // 1. checkToken isteğinin header'a sahip olması için ÖNCE token'ı istemciye ayarla
+      apiClient.setAuthToken(storedToken);
 
+      // 2. Verify token with backend
+      // 2. Token'ı backend ile doğrula
+      const result = await this.api.checkToken();
+
+      // 3. If no error thrown above, session is valid
+      // 3. Yukarıda hata fırlatılmazsa, oturum geçerlidir
       runInAction(() => {
-        this.token = isValid ? storedToken : null;
-        this.userId = isValid ? Number(storedUserId) : null;
+        this.token = storedToken;
+        this.userId = Number(result.userID);
         this.hydrated = true;
       });
+    } catch (error) {
+      console.log("⚠️ Session invalid or expired:", error);
+      // Token is invalid, clear everything
+      // Token geçersiz, her şeyi temizle
+      await this.logout();
 
-      // inject valid token into HTTP client
-      // geçerli token'ı HTTP istemcisine enjekte et
-      if (isValid) {
-        httpClient.setAccessToken(storedToken);
-      }
-    } catch {
-      // mark hydration as complete even on error
-      // hata durumunda bile hidrasyonu tamamlanmış olarak işaretle
       runInAction(() => {
         this.hydrated = true;
       });
     }
   };
 
-  // authenticate user with email and password
-  // kullanıcıyı email ve şifre ile kimlik doğrula
-  login = async (email: string, password: string) => {
-    // set loading state and clear previous errors
-    // yükleme durumunu ayarla ve önceki hataları temizle
+  // Login action
+  // Giriş işlemi
+  login = async (credentials: AuthCredentials) => {
     runInAction(() => {
       this.loading = true;
       this.error = null;
-      this.errorCode = null;
+      this.errorCode = null; // Reset error code / Hata kodunu sıfırla
     });
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call API Service
+      // API Servisini çağır
+      const data = await this.api.login(credentials);
 
-      // call login API endpoint
-      // giriş API endpoint'ini çağır
-      const res: ApiResponse<LoginData> = await this.api.login(email, password);
-
-      // handle unsuccessful response
-      // başarısız yanıtı işle
-      if (!res.success) {
-        runInAction(() => {
-          this.error = res.message;
-          this.errorCode = res.code || null;
-        });
-        throw new Error(res.message);
-      }
-
-      // store token and userId in memory
-      // token ve userId'yi hafızada sakla
+      // Update State
+      // Durumu güncelle
       runInAction(() => {
-        this.token = res.data?.token ?? null;
-        this.userId = res.data?.userID ?? null;
+        this.token = data.token;
+        this.userId = data.userID;
       });
 
-      // validate that we received valid credentials
-      // geçerli kimlik bilgileri aldığımızı doğrula
-      if (!this.token || !this.userId) {
-        throw new Error("Invalid credentials received from server");
-      }
+      // Set token to Axios Client
+      // Token'ı Axios İstemcisine ayarla
+      apiClient.setAuthToken(data.token);
 
-      // inject token into HTTP client for subsequent requests
-      // sonraki istekler için token'ı HTTP istemcisine enjekte et
-      httpClient.setAccessToken(this.token);
-
-      // persist credentials to secure storage
-      // kimlik bilgilerini güvenli depoya kaydet
-      await SecureStore.setItemAsync(TOKEN_KEY, this.token);
-      await SecureStore.setItemAsync(USER_ID_KEY, String(this.userId));
+      // Persist to SecureStore
+      // SecureStore'a kalıcı olarak kaydet
+      await Promise.all([
+        SecureStore.setItemAsync(TOKEN_KEY, data.token),
+        SecureStore.setItemAsync(USER_ID_KEY, String(data.userID)),
+      ]);
     } catch (err: any) {
-      // extract error details from response
-      // yanıttan hata detaylarını çıkar
-      const errorData = err?.response?.data;
-      const message = errorData?.message || "Login failed.";
-      const code = errorData?.code || null;
+      // Handle Error - Extract CODE specifically
+      // Hatayı ele al - Özellikle KODU çıkar
+      // Backend returns: { success: false, code: "AUTH_INVALID_CREDENTIALS", message: "..." }
 
-      // TODO : remove console log in production
-      console.log("❌ Login error:", {
-        message,
-        code,
-        status: err?.response?.status,
-      });
+      const message = err?.message || "Login failed";
+      const code = err?.code || "GENERAL_ERROR"; // Fallback code
 
-      // update error state
-      // hata durumunu güncelle
       runInAction(() => {
         this.error = message;
-        this.errorCode = code;
+        this.errorCode = code; // <--- THIS WAS MISSING / BU EKSİKTİ
       });
 
-      // re-throw for UI error handling
-      // UI hata işleme için tekrar fırlat
+      // Re-throw for UI to handle logic if needed
       throw err;
     } finally {
       // always clear loading state
@@ -176,11 +149,9 @@ export class AuthStore {
     }
   };
 
-  // create new user account
-  // yeni kullanıcı hesabı oluştur
-  register = async (email: string, password: string) => {
-    // set loading state and clear previous errors
-    // yükleme durumunu ayarla ve önceki hataları temizle
+  // Register action
+  // Kayıt işlemi
+  register = async (credentials: AuthCredentials) => {
     runInAction(() => {
       this.loading = true;
       this.error = null;
@@ -188,72 +159,40 @@ export class AuthStore {
     });
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // call register API endpoint
-      // kayıt API endpoint'ini çağır
-      const res: ApiResponse<RegisterData> = await this.api.register(
-        email,
-        password
-      );
-
-      // handle unsuccessful response
-      // başarısız yanıtı işle
-      if (!res.success) {
-        runInAction(() => {
-          this.error = res.message;
-          this.errorCode = res.code || null;
-        });
-        throw new Error(res.message);
-      }
-
-      // registration successful - no auto-login, just return success
-      // kayıt başarılı - otomatik giriş yok, sadece başarı dön
-      console.log("✅ Registration successful - user should login manually");
+      // Call API Service
+      await this.api.register(credentials);
     } catch (err: any) {
-      // extract error details from response
-      // yanıttan hata detaylarını çıkar
-      const errorData = err?.response?.data;
-      const message = errorData?.message || "Registration failed.";
-      const code = errorData?.code || null;
+      const message = err?.message || "Registration failed";
+      const code = err?.code || "GENERAL_ERROR";
 
-      console.log("❌ Register error:", {
-        message,
-        code,
-        status: err?.response?.status,
-      });
-
-      // update error state
-      // hata durumunu güncelle
       runInAction(() => {
         this.error = message;
-        this.errorCode = code;
+        this.errorCode = code; // Save the code for AuthScreen mapping / AuthScreen eşleştirmesi için kodu kaydet
       });
 
       // re-throw for UI error handling
       // UI hata işleme için tekrar fırlat
       throw err;
     } finally {
-      // always clear loading state
-      // her zaman yükleme durumunu temizle
       runInAction(() => {
         this.loading = false;
       });
     }
   };
 
-  // clear session and remove credentials
-  // oturumu temizle ve kimlik bilgilerini kaldır
+  // Logout action
+  // Çıkış işlemi
   logout = async () => {
     // clear in-memory state
     // hafızadaki durumu temizle
     runInAction(() => {
       this.token = null;
       this.userId = null;
+      this.error = null;
+      this.errorCode = null;
     });
 
-    // remove token from HTTP client
-    // HTTP istemcisinden token'ı kaldır
-    httpClient.setAccessToken(null);
+    apiClient.setAuthToken(null);
 
     // remove credentials from secure storage
     // güvenli depodan kimlik bilgilerini kaldır
@@ -263,18 +202,12 @@ export class AuthStore {
     ]);
   };
 
-  // clear current error state
-  // mevcut hata durumunu temizle
+  // Clear error manually
+  // Hatayı manuel olarak temizle
   clearError() {
     runInAction(() => {
       this.error = null;
       this.errorCode = null;
     });
   }
-
-  // handle 401 unauthorized response from API
-  // API'den gelen 401 yetkisiz yanıtını işle
-  handleUnauthorized = () => {
-    this.logout();
-  };
 }

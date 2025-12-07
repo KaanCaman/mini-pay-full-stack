@@ -113,7 +113,10 @@ const AuthScreen = observer(() => {
         // daha iyi UX için işlem süresi simüle et
         await Promise.all([
           new Promise((resolve) => setTimeout(resolve, 2000)),
-          authStore.login(email.toLowerCase().trim(), password),
+          authStore.login({
+            email: email.toLowerCase().trim(),
+            password,
+          }),
         ]);
         return;
       }
@@ -122,7 +125,10 @@ const AuthScreen = observer(() => {
       // KAYIT MODU
       // simulate processing time for better UX
       // daha iyi UX için işlem süresi simüle et
-      await authStore.register(email.toLowerCase().trim(), password);
+      await authStore.register({
+        email: email.toLowerCase().trim(),
+        password,
+      });
 
       // show success toast
       // başarı toast'unu göster
@@ -214,7 +220,7 @@ const AuthScreen = observer(() => {
 
         {/* CONFIRM PASSWORD INPUT (only for register) */}
         {mode === 1 && (
-          <>
+          <View>
             <Text
               style={[
                 styles.label,
@@ -231,7 +237,7 @@ const AuthScreen = observer(() => {
               editable={!authStore.loading}
               icon={<LockSimpleIcon size={20} color={colors.text.muted} />}
             />
-          </>
+          </View>
         )}
 
         {/* SUBMIT BUTTON */}

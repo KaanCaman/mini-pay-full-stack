@@ -1,32 +1,37 @@
-// Generic response interface representing the structure of API responses
-// API yanıtlarının yapısını temsil eden genel yanıt arayüzü
-export interface IApiResponse<T> {
-  // generic data payload
-  // genel veri
-  data: T;
+// The standard response wrapper for all successful and error API calls.
+// Tüm başarılı ve hatalı API çağrıları için standart yanıt sarmalayıcı.
+export type GlobalApiResponse<T> = {
+  success: boolean; // Indicates if the call was successful. / Çağrının başarılı olup olmadığını belirtir.
+  code: string;     // Machine readable code (e.g., OK, WALLET_INSUFFICIENT_FUNDS). / Makine tarafından okunabilir kod.
+  message: string;  // Human readable message. / İnsan tarafından okunabilir mesaj.
+  data: T | null;   // The actual payload data. Null if 'success' is false. / Asıl veri yükü. 'success' false ise null.
+};
 
-  // HTTP status code
-  // HTTP durum kodu
-  status: number;
+// A generic type for successful responses that carry data.
+// Veri taşıyan başarılı yanıtlar için genel tip.
+export type SuccessResponse<T> = GlobalApiResponse<T> & {
+    success: true;
+    data: T;
+};
 
-  // Optional error messages
-  // Opsiyonel hata mesajları için
-  message?: string;
+// A generic type for error responses.
+// Hata yanıtları için genel tip.
+export type ErrorResponse = GlobalApiResponse<null> & {
+    success: false;
+};
+
+// Definition for the core API client interface.
+// Temel API istemci arayüzünün tanımı.
+export interface IApiClient {
+  get<T>(path: string, config?: object): Promise<SuccessResponse<T>>;
+  post<T, D = any>(path: string, data: D, config?: object): Promise<SuccessResponse<T>>;
+  // Other methods (put, delete) can be added here if needed.
+  // Diğer metotlar (put, delete) gerektiğinde buraya eklenebilir.
 }
 
-// Generic request configuration to abstract library-specific configs
-// Kütüphaneye özgü yapılandırmaları soyutlamak için genel istek yapılandırması
-export interface IApiRequestConfig {
-  // request headers
-  // istek başlıkları
-
-  headers?: Record<string, string>;
-
-  // query parameters
-  // sorgu parametreleri
-  params?: any;
-
-  // request timeout in milliseconds
-  // istek zaman aşımı (milisaniye cinsinden)
-  timeout?: number;
+// Data structure for Login response payload
+// Giriş yanıtı veri yükü için veri yapısı
+export interface LoginResponseData {
+    token: string;
+    userID: number;
 }

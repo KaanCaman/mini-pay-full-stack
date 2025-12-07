@@ -1,78 +1,86 @@
-import { IApiClient } from "../client/IApiClient";
+import { IApiClient } from "../client/types";
 import { IApiService } from "./IApiService";
-import { ApiResponse, LoginData, RegisterData, MeData } from "./types";
+import {
+  AuthCredentials,
+  UserTokenInfo,
+  BalanceData,
+  WalletAmount,
+  TransferDetails,
+  TransactionHistoryData,
+} from "./types";
 
-//
-// MiniPayApiService
-// Concrete implementation of IApiService using IApiClient as the HTTP layer.
-//
-// MiniPayApiService
-// HTTP katmanı olarak IApiClient kullanan IApiService'in somut implementasyonu.
 export class MiniPayApiService implements IApiService {
-  // The injected API client (AxiosApiClient or mock implementation)
-  // Enjekte edilen API istemcisi (AxiosApiClient veya test için mock)
-  private client: IApiClient;
+  private apiClient: IApiClient;
 
-  // Constructor receives a generic HTTP client (IApiClient)
-  // Constructor, genel HTTP istemcisini alır (IApiClient)
-
-  constructor(client: IApiClient) {
-    this.client = client;
+  // Dependency Injection: Service relies on an abstract Client
+  // Bağımlılık Enjeksiyonu: Servis soyut bir İstemciye dayanır
+  constructor(apiClient: IApiClient) {
+    this.apiClient = apiClient;
   }
 
-  //
-  // Performs login with email + password.
-  //
-  // Uses IApiClient.post() → returns IApiResponse<ApiResponse<LoginData>>
-  // We unwrap `.data` and return ApiResponse<LoginData> to the caller.
-  //
-  // Email + şifre ile login işlemini yapar.
-  // IApiClient.post() → IApiResponse<ApiResponse<LoginData>> döner.
-  // `.data` içinden ApiResponse<LoginData> alınarak UI katmanına döndürülür.
-  ///
-  async login(
-    email: string,
-    password: string
-  ): Promise<ApiResponse<LoginData>> {
-    const response = await this.client.post<ApiResponse<LoginData>>("/login", {
-      email,
-      password,
-    });
+  // Auth Operations
+  // Yetkilendirme İşlemleri
 
-    return response.data; // unwrap IApiResponse<T>
+  async register(credentials: AuthCredentials): Promise<void> {
+    // Calls POST /register. Expects no data in return, just success.
+    // POST /register çağırır. Dönüşte veri beklemez, sadece başarı durumu.
+    await this.apiClient.post<null>("/register", credentials);
   }
 
-  // Registers a new user with email + password.
-  // Yeni kullanıcı kaydı oluşturur (email + password).
-
-  async register(
-    email: string,
-    password: string
-  ): Promise<ApiResponse<RegisterData>> {
-    const response = await this.client.post<ApiResponse<RegisterData>>(
-      "/register",
-      { email, password }
+  async login(credentials: AuthCredentials): Promise<UserTokenInfo> {
+    // Calls POST /login. Returns token and userID.
+    // POST /login çağırır. Token ve userID döner.
+    const response = await this.apiClient.post<UserTokenInfo>(
+      "/login",
+      credentials
     );
 
-    return response.data;
-  }
-  //Checks if token is authenticated via /me
-  // /me endpoint'i üzerinden token doğrulaması yapar.
-
-  async isAuthenticated(token: string): Promise<boolean> {
-    try {
-      const response = await this.client.get<ApiResponse<MeData>>("/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      return response.data.success === true;
-    } catch {
-      return false;
-    }
+    // We strictly assume data is present if success is true due to our types
+    // Türlerimiz sayesinde success true ise datanın var olduğunu kesin varsayıyoruz
+    return response.data!;
   }
 
-  //
-  //
+  async checkToken(): Promise<{ userID: number }> {
+    // Verify if the current token is valid
+    // Mevcut token'ın geçerli olup olmadığını doğrula
+    const response = await this.apiClient.get<{ userID: number }>("/me");
+    return response.data!;
+  }
+
+  // Wallet Operations
+  // Cüzdan İşlemleri
+
+  async getBalance(): Promise<BalanceData> {
+    // Fetches the current wallet balance
+    // Mevcut cüzdan bakiyesini getirir
+    const response = await this.apiClient.get<BalanceData>("/wallet/balance");
+    return response.data!;
+  }
+
+  async deposit(details: WalletAmount): Promise<void> {
+    // Deposit money (amount in cents)
+    // Para yatırma (miktar kuruş cinsinden)
+    await this.apiClient.post<null>("/wallet/deposit", details);
+  }
+
+  async withdraw(details: WalletAmount): Promise<void> {
+    // Withdraw money. Backend checks sufficiency.
+    // Para çekme. Backend yeterliliği kontrol eder.
+    await this.apiClient.post<null>("/wallet/withdraw", details);
+  }
+
+  async transfer(details: TransferDetails): Promise<void> {
+    // Transfer money to another user.
+    // Başka bir kullanıcıya para transferi.
+    await this.apiClient.post<null>("/wallet/transfer", details);
+  }
+
+  async getTransactionHistory(): Promise<TransactionHistoryData> {
+    // Get list of past transactions
+    // Geçmiş işlemlerin listesini al
+    const response = await this.apiClient.get<TransactionHistoryData>(
+      "/wallet/history"
+    );
+    return response.data!;
+  }
 }

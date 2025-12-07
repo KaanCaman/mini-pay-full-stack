@@ -1,233 +1,100 @@
-import axios, {
-  AxiosError,
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from "axios";
-import { IApiClient } from "./IApiClient";
-import { IApiResponse, IApiRequestConfig } from "./types";
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import { IApiClient, GlobalApiResponse, SuccessResponse } from "./types";
 import { Platform } from "react-native";
 
+// Base URL configuration (Should be in env variables in production)
+// Temel URL yapılandırması (Prodüksiyonda env değişkenlerinde olmalı)
+const BASE_URL = Platform.select<string>({
+  ios: "http://localhost:3000",
+  android: "http://10.0.2.2:3000",
+});
+
 export class AxiosApiClient implements IApiClient {
-  // The internal Axios instance used for making requests
-  // İstekleri yapmak için kullanılan dahili Axios örneği
-  private axiosInstance: AxiosInstance;
-
-  // Stores the authentication token to be used in headers
-  // Headerlarda kullanılacak kimlik doğrulama token'ını saklar
-  private accessToken: string | null = null;
-
-  // Callback function to execute when a 401 error occurs
-  // 401 hatası oluştuğunda çalıştırılacak geri çağırma fonksiyonu
-  private onUnauthorized: (() => void) | null = null;
+  private api: AxiosInstance;
 
   constructor() {
-    // Initialize the Axios instance
-    // Axios örneğini başlatır
-    this.axiosInstance = this.createAxiosInstance();
-
-    // Configure request and response interceptors
-    // İstek ve yanıt interceptor'larını yapılandırır
-    this.setupInterceptors();
-  }
-
-  // ---------------------------------------------------------------------------
-  // Configuration Methods
-  // ---------------------------------------------------------------------------
-
-  private createAxiosInstance(): AxiosInstance {
-    // Determine the base URL based on the operating system
-    // İşletim sistemine göre temel URL'i belirler (Android emülatörü için özel IP)
-    const baseURL =
-      Platform.OS === "android"
-        ? "http://10.0.2.2:3000"
-        : "http://localhost:3000";
-
-    // Create a new Axios instance with default configuration
-    // Varsayılan yapılandırma ile yeni bir Axios örneği oluşturur
-    return axios.create({
-      baseURL,
-      timeout: 10000,
+    this.api = axios.create({
+      baseURL: BASE_URL,
       headers: {
         "Content-Type": "application/json",
       },
+      timeout: 10000, // 10 seconds timeout / 10 saniye zaman aşımı
     });
-  }
 
-  // Updates the access token for future requests
-  // Gelecekteki istekler için erişim token'ını günceller
-  public setAccessToken(token: string | null): void {
-    this.accessToken = token;
-  }
-
-  // Sets the handler for unauthorized (401) responses
-  // Yetkisiz (401) yanıtlar için işleyiciyi ayarlar
-  public setOnUnauthorized(handler: () => void): void {
-    this.onUnauthorized = handler;
-  }
-
-  // Interceptor Setup
-  // Interceptor Kurulumu
-  private setupInterceptors(): void {
-    // Request Interceptor configuration
-    // İstek Interceptor yapılandırması
-    this.axiosInstance.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
-        // Log request details only in development mode
-        // Sadece geliştirme modunda istek detaylarını loglar
-        if (__DEV__) {
-          console.log(`🚀 [${config.method?.toUpperCase()}] ${config.url}`, {
-            params: config.params,
-            data: config.data,
-          });
-        }
-
-        // Inject the Authorization header if a token exists
-        // Eğer token mevcutsa Authorization header'ını ekler
-        if (this.accessToken && config.headers) {
-          config.headers.Authorization = `Bearer ${this.accessToken}`;
-        }
-
+    // Request Interceptor: Add token if exists
+    // İstek Kesici: Varsa token ekle
+    this.api.interceptors.request.use(
+      (config) => {
+        // TODO: Get token from SecureStore and add to Authorization header
+        // TODO: Token'ı SecureStore'dan al ve Authorization başlığına ekle
+        console.log(
+          `[API Request] ${config.method?.toUpperCase()} ${config.url}`
+        );
         return config;
       },
-      (error: AxiosError) => Promise.reject(error)
+      (error) => {
+        return Promise.reject(error);
+      }
     );
 
-    // Response Interceptor configuration
-    // Yanıt Interceptor yapılandırması
-    this.axiosInstance.interceptors.response.use(
-      (response: AxiosResponse) => {
-        // Log successful responses in development mode
-        // Başarılı yanıtları geliştirme modunda loglar
-        if (__DEV__) {
-          console.log(
-            `✅ [${response.status}] ${response.config.url}`,
-            response.data
+    // Response Interceptor: Handle global errors and wrap responses
+    // Yanıt Kesici: Global hataları ele al ve yanıtları sarmala
+    this.api.interceptors.response.use(
+      (response: AxiosResponse<GlobalApiResponse<any>>) => {
+        // If the HTTP status is 200 but the backend logical success is false
+        // HTTP durumu 200 olsa bile backend mantıksal success false ise
+        if (!response.data.success) {
+          console.warn(
+            `[API Logic Error] ${response.data.code}: ${response.data.message}`
           );
+
+          // Throw the backend error
+          // Backend hatasını fırlat
+          return Promise.reject(response.data);
         }
         return response;
       },
-      (error: AxiosError) => {
-        // Log error details for debugging purposes
-        // Hata ayıklama amacıyla hata detaylarını loglar
-        if (__DEV__) {
-          console.error(
-            `❌ [${error.response?.status || "ERROR"}] ${error.config?.url}`,
-            {
-              message: error.message,
-              data: error.response?.data,
-            },
-            error
-          );
-        }
-
-        // Delegate error handling to a specific method
-        // Hata yönetimini özel bir metoda devreder
-        this.handleError(error);
-
+      (error) => {
+        // Handle network errors or 4xx/5xx status codes
+        // Ağ hatalarını veya 4xx/5xx durum kodlarını ele al
+        console.error("[API Network Error]", error.message);
         return Promise.reject(error);
       }
     );
   }
 
-  // Centralized error handling logic
-  // Merkezi hata yönetimi mantığı
-  private handleError(error: AxiosError): void {
-    // Get the status code from the error response
-    // Hata yanıtından durum kodunu alır
-    const status = error.response?.status;
+  // Generic GET method implementation
+  // Genel GET metodu uygulaması
+  async get<T>(
+    path: string,
+    config?: AxiosRequestConfig
+  ): Promise<SuccessResponse<T>> {
+    const response = await this.api.get<SuccessResponse<T>>(path, config);
+    return response.data;
+  }
 
-    // Check for 401 status and trigger the callback if defined
-    // 401 durumunu kontrol eder ve tanımlıysa geri çağırmayı tetikler
-    if (status === 401 && this.onUnauthorized) {
-      this.onUnauthorized();
+  // Generic POST method implementation
+  // Genel POST metodu uygulaması
+  async post<T, D = any>(
+    path: string,
+    data: D,
+    config?: AxiosRequestConfig
+  ): Promise<SuccessResponse<T>> {
+    const response = await this.api.post<SuccessResponse<T>>(
+      path,
+      data,
+      config
+    );
+    return response.data;
+  }
+
+  // Method to set the authorization token dynamically
+  // Yetkilendirme token'ını dinamik olarak ayarlama metodu
+  setAuthToken(token: string | null) {
+    if (token) {
+      this.api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    } else {
+      delete this.api.defaults.headers.common["Authorization"];
     }
-  }
-
-  // Converts Axios response to our generic IApiResponse
-  // Axios yanıtını genel IApiResponse tipimize dönüştürür
-  private normalizeResponse<T>(response: AxiosResponse<T>): IApiResponse<T> {
-    return {
-      data: response.data,
-      status: response.status,
-      message: response.statusText,
-    };
-  }
-
-  // ---------------------------------------------------------------------------
-  // Public API Methods (Fully Abstracted)
-  // ---------------------------------------------------------------------------
-
-  // Generic GET request wrapper
-  // Genel (generic) GET isteği sarmalayıcısı
-  public async get<T>(
-    url: string,
-    config?: IApiRequestConfig
-  ): Promise<IApiResponse<T>> {
-    const response = await this.axiosInstance.get<T>(
-      url,
-      config as AxiosRequestConfig
-    );
-    return this.normalizeResponse<T>(response);
-  }
-
-  // Generic POST request wrapper
-  // Genel (generic) POST isteği sarmalayıcısı
-  public async post<T>(
-    url: string,
-    data?: any,
-    config?: IApiRequestConfig
-  ): Promise<IApiResponse<T>> {
-    const response = await this.axiosInstance.post<T>(
-      url,
-      data,
-      config as AxiosRequestConfig
-    );
-
-    return this.normalizeResponse<T>(response);
-  }
-
-  // Generic PUT request wrapper
-  // Genel (generic) PUT isteği sarmalayıcısı
-  public async put<T>(
-    url: string,
-    data?: any,
-    config?: IApiRequestConfig
-  ): Promise<IApiResponse<T>> {
-    const response = await this.axiosInstance.put<T>(
-      url,
-      data,
-      config as AxiosRequestConfig
-    );
-    return this.normalizeResponse<T>(response);
-  }
-
-  // Generic PATCH request wrapper
-  // Genel (generic) PATCH isteği sarmalayıcısı
-  public async patch<T>(
-    url: string,
-    data?: any,
-    config?: IApiRequestConfig
-  ): Promise<IApiResponse<T>> {
-    const response = await this.axiosInstance.patch<T>(
-      url,
-      data,
-      config as AxiosRequestConfig
-    );
-    return this.normalizeResponse<T>(response);
-  }
-
-  // Generic DELETE request wrapper
-  // Genel (generic) DELETE isteği sarmalayıcısı
-  public async delete<T>(
-    url: string,
-    config?: IApiRequestConfig
-  ): Promise<IApiResponse<T>> {
-    const response = await this.axiosInstance.delete<T>(
-      url,
-      config as AxiosRequestConfig
-    );
-    return this.normalizeResponse<T>(response);
   }
 }
