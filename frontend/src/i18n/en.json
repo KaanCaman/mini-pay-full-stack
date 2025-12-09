@@ -15,7 +15,15 @@
     "insufficient_funds": "Insufficient funds.",
     "invalid_amount": "Invalid amount.",
     "request_body_invalid": "Invalid request format.",
-    "tx_history_failed": "Failed to fetch transaction history."
+    "tx_history_failed": "Failed to fetch transaction history.",
+    "session_expired": {
+      "title": "Session Expired",
+      "message": "Please log in again for your security."
+    },
+    "network_error": {
+      "title": "No Internet Connection",
+      "message": "Please check your internet connection. Logging out for security."
+    }
   },
 
   "auth": {

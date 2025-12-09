@@ -15,7 +15,15 @@
     "insufficient_funds": "Yetersiz bakiye.",
     "invalid_amount": "Geçersiz tutar.",
     "request_body_invalid": "Geçersiz istek formatı.",
-    "tx_history_failed": "İşlem geçmişi alınamadı."
+    "tx_history_failed": "İşlem geçmişi alınamadı.",
+    "session_expired": {
+      "title": "Oturum Süresi Doldu",
+      "message": "Güvenliğiniz için tekrar giriş yapınız."
+    },
+    "network_error": {
+      "title": "İnternet Bağlantısı Yok",
+      "message": "Lütfen internet bağlantınızı kontrol ediniz. Güvenlik nedeniyle çıkış yapılıyor."
+    }
   },
 
   "auth": {

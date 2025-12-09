@@ -12,6 +12,7 @@ const BASE_URL = Platform.select<string>({
 export class AxiosApiClient implements IApiClient {
   private api: AxiosInstance;
   private onUnauthorizedCallback: (() => void) | null = null;
+  private onNetworkErrorCallback: (() => void) | null = null;
 
   constructor() {
     this.api = axios.create({
@@ -67,6 +68,13 @@ export class AxiosApiClient implements IApiClient {
           if (this.onUnauthorizedCallback) {
             this.onUnauthorizedCallback();
           }
+        } else if (!error.response && error.request) {
+          // Network Error (No response received)
+          // Ağ hatası (Yanıt alınamadı)
+          console.error("🌐 Network Error detected.");
+          if (this.onNetworkErrorCallback) {
+            this.onNetworkErrorCallback();
+          }
         }
 
         return Promise.reject(error);
@@ -111,5 +119,9 @@ export class AxiosApiClient implements IApiClient {
 
   setOnUnauthorized(callback: () => void) {
     this.onUnauthorizedCallback = callback;
+  }
+
+  setOnNetworkError(callback: () => void) {
+    this.onNetworkErrorCallback = callback;
   }
 }

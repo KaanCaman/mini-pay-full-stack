@@ -33,6 +33,7 @@ export interface IApiClient {
   ): Promise<SuccessResponse<T>>;
   setAuthToken(token: string | null): void;
   setOnUnauthorized(callback: () => void): void;
+  setOnNetworkError(callback: () => void): void;
 }
 
 // Data structure for Login response payload

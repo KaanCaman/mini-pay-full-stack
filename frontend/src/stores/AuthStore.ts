@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import * as SecureStore from "expo-secure-store";
 import { IApiService } from "../api/service/IApiService";
 import { AuthCredentials } from "../api/service/types";
+import i18n from "../i18n/index"; // Indirect import via index
 
 // Secure storage keys
 // Güvenli depolama anahtarları
@@ -44,6 +45,25 @@ export class AuthStore {
     // Register 401 callback for automatic logout
     // Otomatik çıkış için 401 geri aramasını kaydet
     this.api.setOnUnauthorized(() => {
+      // Dynamic import or use global if available. We'll use the one we define.
+      const { default: ToastService } = require("../services/ToastService");
+
+      ToastService.error(
+        i18n.t("errors.session_expired.title"),
+        i18n.t("errors.session_expired.message")
+      );
+      this.logout();
+    });
+
+    // Register Network Error callback
+    // Ağ hatası geri aramasını kaydet
+    this.api.setOnNetworkError(() => {
+      const { default: ToastService } = require("../services/ToastService");
+
+      ToastService.error(
+        i18n.t("errors.network_error.title"),
+        i18n.t("errors.network_error.message")
+      );
       this.logout();
     });
   }

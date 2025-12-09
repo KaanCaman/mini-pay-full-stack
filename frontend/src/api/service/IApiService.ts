@@ -16,6 +16,7 @@ export interface IApiService {
   checkToken(): Promise<{ userID: number }>;
   setAuthToken(token: string | null): void;
   setOnUnauthorized(callback: () => void): void;
+  setOnNetworkError(callback: () => void): void;
 
   // ---
 

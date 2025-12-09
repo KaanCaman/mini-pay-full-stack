@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import Toast, { ToastConfig, ToastType } from "../components/utils/Toast";
 
 interface ToastContextType {
@@ -60,6 +66,23 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
     },
     []
   );
+
+  // Register with Singleton Service for global access (AuthStore, etc.)
+  // Global erişim için Singleton Servise kaydet (AuthStore vb.)
+  useEffect(() => {
+    // Dynamically import to avoid circular dependencies if any, though here it's fine
+    // Olası dairesel bağımlılıkları (circular dependency) önlemek için dinamik import kullanılıyor
+
+    const { default: ToastService } = require("../services/ToastService");
+    // require ile ToastService'i dinamik olarak import ediyoruz
+    // default export’u ToastService adıyla çekiyoruz
+
+    ToastService.register(showToast);
+    // ToastService'in register metoduna "showToast" fonksiyonunu veriyoruz
+    // Böylece uygulamanın herhangi bir yerinde ToastService üzerinden showToast çağrılabilir
+    // Yani merkezi bir Toast yönetimi sağlanıyor
+  }, [showToast]);
+  // useEffect yalnızca showToast değiştiğinde tekrar çalışır
 
   const hideToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));

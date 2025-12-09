@@ -55,6 +55,10 @@ export class MiniPayApiService implements IApiService {
     this.apiClient.setOnUnauthorized(callback);
   }
 
+  setOnNetworkError(callback: () => void): void {
+    this.apiClient.setOnNetworkError(callback);
+  }
+
   // Wallet Operations
   // Cüzdan İşlemleri
 
