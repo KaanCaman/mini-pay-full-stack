@@ -14,6 +14,8 @@ export interface IApiService {
   register(credentials: AuthCredentials): Promise<void>;
   login(credentials: AuthCredentials): Promise<UserTokenInfo>;
   checkToken(): Promise<{ userID: number }>;
+  setAuthToken(token: string | null): void;
+  setOnUnauthorized(callback: () => void): void;
 
   // ---
 

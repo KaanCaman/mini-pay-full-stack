@@ -1,4 +1,5 @@
 import { AuthStore } from "./AuthStore";
+import { WalletStore } from "./WalletStore";
 
 import { apiService } from "../api/";
 
@@ -8,6 +9,7 @@ export class RootStore {
   // declares a property to hold the authentication store instance
   // authentication store instance'ını tutacak bir özellik tanımlar
   authStore: AuthStore;
+  walletStore: WalletStore;
 
   // constructor initializes all store instances and wires up global behaviors
   // constructor tüm store instance'larını başlatır ve global davranışları bağlar
@@ -15,6 +17,7 @@ export class RootStore {
     // creates the authentication store and injects the API service dependency
     // authentication store'u oluşturur ve API servisini dependency olarak enjekte eder
     this.authStore = new AuthStore(apiService);
+    this.walletStore = new WalletStore(apiService);
   }
 
   // hydrates all root-level stores during app startup

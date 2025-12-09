@@ -52,15 +52,24 @@
     "seeAll": "Tümünü Gör"
   },
   "actions": {
-    "pay": "Öde",
+    "pay": "Yükle",
+    "withdraw": "Çek",
+    "transfer": "Transfer",
     "sendMoney": "Para Gönder",
     "requestMoney": "Para İste"
+  },
+  "transaction": {
+    "deposit": "Para Yükleme",
+    "withdraw": "Para Çekme",
+    "sent": "Para Gönderimi",
+    "received": "Para Transferi"
   },
   "history": {
     "title": "İşlem Geçmişi",
     "search": "İşlemlerde ara...",
     "today": "Bugün",
-    "yesterday": "Dün"
+    "yesterday": "Dün",
+    "noTransactions": "Henüz işlem yok"
   },
   "tabs": {
     "home": "Ana Sayfa",

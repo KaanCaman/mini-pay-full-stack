@@ -1,7 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import * as SecureStore from "expo-secure-store";
 import { IApiService } from "../api/service/IApiService";
-import { apiClient } from "../api/index";
 import { AuthCredentials } from "../api/service/types";
 
 // Secure storage keys
@@ -41,6 +40,12 @@ export class AuthStore {
   constructor(api: IApiService) {
     this.api = api;
     makeAutoObservable(this);
+
+    // Register 401 callback for automatic logout
+    // Otomatik çıkış için 401 geri aramasını kaydet
+    this.api.setOnUnauthorized(() => {
+      this.logout();
+    });
   }
 
   // Computed: check if user is authenticated
@@ -69,7 +74,7 @@ export class AuthStore {
 
       // 1. Set token to client FIRST so the checkToken request has headers
       // 1. checkToken isteğinin header'a sahip olması için ÖNCE token'ı istemciye ayarla
-      apiClient.setAuthToken(storedToken);
+      this.api.setAuthToken(storedToken);
 
       // 2. Verify token with backend
       // 2. Token'ı backend ile doğrula
@@ -117,7 +122,7 @@ export class AuthStore {
 
       // Set token to Axios Client
       // Token'ı Axios İstemcisine ayarla
-      apiClient.setAuthToken(data.token);
+      this.api.setAuthToken(data.token);
 
       // Persist to SecureStore
       // SecureStore'a kalıcı olarak kaydet
@@ -192,7 +197,7 @@ export class AuthStore {
       this.errorCode = null;
     });
 
-    apiClient.setAuthToken(null);
+    this.api.setAuthToken(null);
 
     // remove credentials from secure storage
     // güvenli depodan kimlik bilgilerini kaldır

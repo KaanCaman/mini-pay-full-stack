@@ -11,6 +11,7 @@ const BASE_URL = Platform.select<string>({
 
 export class AxiosApiClient implements IApiClient {
   private api: AxiosInstance;
+  private onUnauthorizedCallback: (() => void) | null = null;
 
   constructor() {
     this.api = axios.create({
@@ -58,6 +59,16 @@ export class AxiosApiClient implements IApiClient {
         // Handle network errors or 4xx/5xx status codes
         // Ağ hatalarını veya 4xx/5xx durum kodlarını ele al
         console.error("[API Network Error]", error.message);
+
+        if (error.response && error.response.status === 401) {
+          console.warn(
+            "🔒 401 Unauthorized detected. Triggering logout callback."
+          );
+          if (this.onUnauthorizedCallback) {
+            this.onUnauthorizedCallback();
+          }
+        }
+
         return Promise.reject(error);
       }
     );
@@ -96,5 +107,9 @@ export class AxiosApiClient implements IApiClient {
     } else {
       delete this.api.defaults.headers.common["Authorization"];
     }
+  }
+
+  setOnUnauthorized(callback: () => void) {
+    this.onUnauthorizedCallback = callback;
   }
 }

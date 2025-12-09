@@ -53,15 +53,24 @@
     "seeAll": "See All"
   },
   "actions": {
-    "pay": "Pay",
+    "pay": "Deposit",
+    "withdraw": "Withdraw",
+    "transfer": "Transfer",
     "sendMoney": "Send Money",
     "requestMoney": "Request Money"
+  },
+  "transaction": {
+    "deposit": "Deposit",
+    "withdraw": "Withdraw",
+    "sent": "Money Sent",
+    "received": "Money Received"
   },
   "history": {
     "title": "Transaction History",
     "search": "Search transactions...",
     "today": "Today",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "noTransactions": "No transactions yet"
   },
   "tabs": {
     "home": "Home",

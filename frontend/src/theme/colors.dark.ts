@@ -1,17 +1,17 @@
 // Dark theme color tokens
 export const darkColors = {
   background: {
-    primary: "#0D1B12",
-    secondary: "#15251A",
-    tertiary: "#1C2F24",
+    primary: "#0A120E", // Deep dark green/black
+    secondary: "#112118", // Slightly lighter for headers/nav
+    tertiary: "#1C2F24", // Icon backgrounds
   },
   text: {
     primary: "#FFFFFF",
-    secondary: "#A7B4AD",
-    muted: "#7E8A84",
+    secondary: "#A7B4AD", // Muted greenish gray
+    muted: "#5C6B63",
   },
-  card: "#1A2B20",
-  border: "#2A3C32",
+  card: "#15251B", // Dark green card background
+  border: "#23382D",
   accent: {
     primary: "#00E676",
     secondary: "#00C163",

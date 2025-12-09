@@ -47,6 +47,14 @@ export class MiniPayApiService implements IApiService {
     return response.data!;
   }
 
+  setAuthToken(token: string | null): void {
+    this.apiClient.setAuthToken(token);
+  }
+
+  setOnUnauthorized(callback: () => void): void {
+    this.apiClient.setOnUnauthorized(callback);
+  }
+
   // Wallet Operations
   // Cüzdan İşlemleri
 
